@@ -1,309 +1,1309 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>MMLI · Competition System</title>
-  <!-- PWA manifest & service worker will be injected via inline registration -->
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1NTElDb21wU3RhdHMiLAogICJzaG9ydF9uYW1lIjogIk1NTElTdGF0cyIsCiAgImRlc2NyaXB0aW9uIjogIk9mZmxpbmUgUXVpeiBTdGF0aXN0aWNzIGZvciBNaW5kIE1hc3RlcnMgTGliZXJpYSIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGUyYzU3IiwKICAidGhlbWVfY29sb3IiOiAiI2Y5YzA0MCIsCiAgImljb25zIjogWwogICAgeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHJlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIGZpbGw9JyMwZTJjNTcnLz48dGV4dCB4PSc1MCcgeT0nNTUnIGZvbnQtc2l6ZT0nMjAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmOWM0MDAnIGZvbnQtZmFtaWx5PSdTYW5zLXNlcmlmJz5NTUxJPC90ZXh0Pjwvc3ZnPiIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCJ9CiAgXQp9">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0b1e3a; color: #f0f4fc; min-height: 100vh; }
-    :root { --navy: #0e2c57; --gold: #f9c040; --gold-light: #ffd966; --white: #f0f4fc; --dark-bg: #0b1e3a; --card-bg: #142d5a; --shadow: 0 12px 30px rgba(0,0,0,0.5); }
-    .app { max-width: 1400px; margin: 0 auto; padding: 0 16px 80px; }
-    /* header & branding */
-    .header { display: flex; align-items: center; gap: 12px; padding: 20px 0 12px; border-bottom: 2px solid var(--gold); flex-wrap: wrap; }
-    .logo { display: flex; align-items: center; gap: 8px; }
-    .logo svg { width: 48px; height: 48px; }
-    .logo-text { font-weight: 700; font-size: 1.6rem; letter-spacing: 1px; color: var(--white); }
-    .logo-text span { color: var(--gold); }
-    .subhead { margin-left: auto; font-size: 0.9rem; background: var(--gold); color: #0b1e3a; padding: 6px 18px; border-radius: 40px; font-weight: 600; }
-    /* nav */
-    .nav-row { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 16px 0 20px; background: var(--card-bg); padding: 8px 12px; border-radius: 60px; box-shadow: var(--shadow); }
-    .nav-btn { background: transparent; border: none; color: #b0c8f0; padding: 8px 16px; border-radius: 40px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-    .nav-btn.active { background: var(--gold); color: #0b1e3a; box-shadow: 0 4px 8px rgba(249,192,64,0.3); }
-    .nav-btn:hover { background: rgba(249,192,64,0.15); }
-    /* cards */
-    .card { background: var(--card-bg); border-radius: 28px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.05); }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 18px; }
-    .stat-number { font-size: 2.6rem; font-weight: 800; color: var(--gold); line-height: 1; }
-    .stat-label { font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
-    .flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .gap-8 { gap: 8px; }
-    .btn { background: var(--gold); color: #0b1e3a; border: none; padding: 10px 24px; border-radius: 60px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-    .btn-outline { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
-    .btn-sm { padding: 6px 16px; font-size: 0.8rem; }
-    .btn-danger { background: #d45a5a; color: white; }
-    .btn-success { background: #3ba87c; color: white; }
-    .btn:active { transform: scale(0.96); }
-    .mb-12 { margin-bottom: 12px; }
-    .mt-12 { margin-top: 12px; }
-    /* live game */
-    .live-header { background: var(--navy); padding: 12px 20px; border-radius: 60px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; border-left: 6px solid var(--gold); }
-    .question-badge { background: var(--gold); color: #0b1e3a; padding: 4px 16px; border-radius: 40px; font-weight: 700; }
-    .student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 8px; margin: 12px 0; }
-    .student-btn { background: #1f3d70; border: 2px solid transparent; padding: 12px 4px; border-radius: 60px; text-align: center; font-weight: 600; font-size: 0.9rem; color: white; transition: 0.15s; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-    .student-btn:active { transform: scale(0.94); }
-    .student-btn.selected { border-color: var(--gold); background: #2a4a82; }
-    .student-btn.correct { background: #2d8f5e; border-color: #7ddfb0; }
-    .student-btn.wrong { background: #a04141; border-color: #e67a7a; }
-    .category-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-    .cat-btn { background: #1f3d70; border: 2px solid #2a4a82; padding: 8px 18px; border-radius: 60px; font-weight: 600; color: white; cursor: pointer; transition: 0.1s; }
-    .cat-btn.active { background: var(--gold); color: #0b1e3a; border-color: var(--gold); }
-    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a2f4a; color: white; padding: 12px 28px; border-radius: 60px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border-left: 6px solid var(--gold); z-index: 999; opacity: 0; transition: 0.3s; pointer-events: none; }
-    .toast.show { opacity: 1; pointer-events: auto; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal { background: var(--card-bg); max-width: 600px; width: 100%; border-radius: 40px; padding: 28px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--gold); }
-    .modal h2 { color: var(--gold); }
-    .input-field { width: 100%; padding: 14px 18px; border-radius: 40px; border: 2px solid #2a4a82; background: #0b1e3a; color: white; font-size: 1rem; margin-bottom: 10px; }
-    .input-field:focus { border-color: var(--gold); outline: none; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 10px 6px; border-bottom: 2px solid var(--gold); color: var(--gold); }
-    td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .text-gold { color: var(--gold); }
-    .text-muted { opacity: 0.6; }
-    @media (max-width: 640px) { .logo-text { font-size: 1.2rem; } .nav-row { gap: 4px; } .nav-btn { padding: 6px 12px; font-size: 0.75rem; } .student-grid { grid-template-columns: repeat(3,1fr); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>MMLI Competition System</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1NTElDb21wU3RhdHMiLAogICJzaG9ydF9uYW1lIjogIk1NTElTdGF0cyIsCiAgImRlc2NyaXB0aW9uIjogIk9mZmxpbmUgUXVpeiBTdGF0aXN0aWNzIGZvciBNaW5kIE1hc3RlcnMgTGliZXJpYSIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGUyYzU3IiwKICAidGhlbWVfY29sb3IiOiAiI2Y5YzA0MCIsCiAgImljb25zIjogWwogICAgeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHJlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIGZpbGw9JyMwZTJjNTcnLz48dGV4dCB4PSc1MCcgeT0nNTUnIGZvbnQtc2l6ZT0nMjAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmOWM0MDAnIGZvbnQtZmFtaWx5PSdTYW5zLXNlcmlmJz5NTUxJPC90ZXh0Pjwvc3ZnPiIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCJ9CiAgXQp9">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b1e3a;
+            color: #f0f4fc;
+            min-height: 100vh;
+        }
+        :root {
+            --navy: #0e2c57;
+            --gold: #f9c040;
+            --gold-light: #ffd966;
+            --white: #f0f4fc;
+            --dark-bg: #0b1e3a;
+            --card-bg: #142d5a;
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+        .app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 16px 80px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 0 12px;
+            border-bottom: 2px solid var(--gold);
+            flex-wrap: wrap;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo svg {
+            width: 48px;
+            height: 48px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            color: var(--white);
+        }
+        .logo-text span {
+            color: var(--gold);
+        }
+        .subhead {
+            margin-left: auto;
+            font-size: 0.9rem;
+            background: var(--gold);
+            color: #0b1e3a;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .nav-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            margin: 16px 0 20px;
+            background: var(--card-bg);
+            padding: 8px 12px;
+            border-radius: 60px;
+            box-shadow: var(--shadow);
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #b0c8f0;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .nav-btn.active {
+            background: var(--gold);
+            color: #0b1e3a;
+            box-shadow: 0 4px 8px rgba(249, 192, 64, 0.3);
+        }
+        .nav-btn:hover {
+            background: rgba(249, 192, 64, 0.15);
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeUp 0.3s ease;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .stat-number {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .btn {
+            background: var(--gold);
+            color: #0b1e3a;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 0.8rem;
+        }
+        .btn-danger {
+            background: #d45a5a;
+            color: white;
+        }
+        .btn-success {
+            background: #3ba87c;
+            color: white;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .live-header {
+            background: var(--navy);
+            padding: 12px 20px;
+            border-radius: 60px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid var(--gold);
+        }
+        .question-badge {
+            background: var(--gold);
+            color: #0b1e3a;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-weight: 700;
+        }
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .student-btn {
+            background: #1f3d70;
+            border: 2px solid transparent;
+            padding: 12px 4px;
+            border-radius: 60px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: white;
+            transition: 0.15s;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .student-btn:active {
+            transform: scale(0.94);
+        }
+        .student-btn.selected {
+            border-color: var(--gold);
+            background: #2a4a82;
+        }
+        .student-btn.correct {
+            background: #2d8f5e;
+            border-color: #7ddfb0;
+        }
+        .student-btn.wrong {
+            background: #a04141;
+            border-color: #e67a7a;
+        }
+        .category-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .cat-btn {
+            background: #1f3d70;
+            border: 2px solid #2a4a82;
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .cat-btn.active {
+            background: var(--gold);
+            color: #0b1e3a;
+            border-color: var(--gold);
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a2f4a;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 60px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            border-left: 6px solid var(--gold);
+            z-index: 999;
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            max-width: 90%;
+        }
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal {
+            background: var(--card-bg);
+            max-width: 600px;
+            width: 100%;
+            border-radius: 40px;
+            padding: 28px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--gold);
+        }
+        .modal h2 {
+            color: var(--gold);
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 40px;
+            border: 2px solid #2a4a82;
+            background: #0b1e3a;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .input-field:focus {
+            border-color: var(--gold);
+            outline: none;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th {
+            text-align: left;
+            padding: 10px 6px;
+            border-bottom: 2px solid var(--gold);
+            color: var(--gold);
+        }
+        td {
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .text-gold {
+            color: var(--gold);
+        }
+        .text-muted {
+            opacity: 0.6;
+        }
+        .badge {
+            background: var(--gold);
+            color: #0b1e3a;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+        @media (max-width: 640px) {
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            .nav-row {
+                gap: 4px;
+            }
+            .nav-btn {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+            .student-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .clickable {
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .clickable:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
-  <div class="app" id="app">
-    <div class="header">
-      <div class="logo">
-        <svg viewBox="0 0 100 100" width="48" height="48"><rect width="100" height="100" fill="#0e2c57" rx="20"/><text x="50" y="65" text-anchor="middle" fill="#f9c040" font-size="38" font-weight="800" font-family="Segoe UI, sans-serif">MM</text><text x="50" y="90" text-anchor="middle" fill="#f9c040" font-size="18" font-weight="600">LI</text></svg>
-        <div class="logo-text">MIND <span>MASTERS</span> · LI</div>
-      </div>
-      <div class="subhead">OFFLINE v1</div>
-    </div>
-    <div class="nav-row" id="navRow">
-      <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
-      <button class="nav-btn" data-section="competitions">🏆 Comp</button>
-      <button class="nav-btn" data-section="schools">🏫 Schools</button>
-      <button class="nav-btn" data-section="students">👨‍🎓 Students</button>
-      <button class="nav-btn" data-section="games">🎮 Games</button>
-      <button class="nav-btn" data-section="live">⚡ Live</button>
-      <button class="nav-btn" data-section="stats">📈 Stats</button>
-      <button class="nav-btn" data-section="awards">🏅 Awards</button>
-      <button class="nav-btn" data-section="backup">💾 Backup</button>
-    </div>
-    <div id="pageContent"></div>
-    <div id="toast" class="toast">Ready</div>
-  </div>
-  <script>
-    // --------------------------------------------------------------
-    // MMLI OFFLINE COMPETITION SYSTEM  (IndexedDB + Vanilla JS)
-    // --------------------------------------------------------------
-    (function(){
-      const DB_NAME = 'MMLI_DB';
-      const DB_VER = 1;
-      let db = null;
-      let currentCompetitionId = null;
-      let currentDivision = 'Junior High';
-
-      // helpers
-      function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-      function toast(msg, dur=2500) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._hide); t._hide=setTimeout(()=>t.classList.remove('show'),dur); }
-
-      // open DB
-      function openDB() {
-        return new Promise((res,rej)=>{
-          const req = indexedDB.open(DB_NAME, DB_VER);
-          req.onupgradeneeded = (e) => {
-            const d = e.target.result;
-            if(!d.objectStoreNames.contains('competitions')) d.createObjectStore('competitions', {keyPath:'id'});
-            if(!d.objectStoreNames.contains('schools')) d.createObjectStore('schools', {keyPath:'id'});
-            if(!d.objectStoreNames.contains('students')) d.createObjectStore('students', {keyPath:'id'});
-            if(!d.objectStoreNames.contains('games')) d.createObjectStore('games', {keyPath:'id'});
-            if(!d.objectStoreNames.contains('answerRecords')) d.createObjectStore('answerRecords', {keyPath:'id'});
-            if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', {keyPath:'key'});
-          };
-          req.onsuccess = (e) => { db = e.target.result; res(db); };
-          req.onerror = (e) => { rej(e.target.error); };
-        });
-      }
-
-      // generic store methods
-      function storePut(storeName, data) {
-        return new Promise((res,rej)=>{
-          const tx = db.transaction(storeName, 'readwrite');
-          const store = tx.objectStore(storeName);
-          const req = store.put(data);
-          req.onsuccess = ()=>res(req.result);
-          req.onerror = ()=>rej(req.error);
-        });
-      }
-      function storeGetAll(storeName) {
-        return new Promise((res,rej)=>{
-          const tx = db.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const req = store.getAll();
-          req.onsuccess = ()=>res(req.result);
-          req.onerror = ()=>rej(req.error);
-        });
-      }
-      function storeDelete(storeName, id) {
-        return new Promise((res,rej)=>{
-          const tx = db.transaction(storeName, 'readwrite');
-          const store = tx.objectStore(storeName);
-          const req = store.delete(id);
-          req.onsuccess = ()=>res();
-          req.onerror = ()=>rej(req.error);
-        });
-      }
-
-      // get by index
-      function storeGetByIndex(storeName, indexName, value) {
-        return new Promise((res,rej)=>{
-          const tx = db.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const idx = store.index(indexName);
-          const req = idx.getAll(value);
-          req.onsuccess = ()=>res(req.result);
-          req.onerror = ()=>rej(req.error);
-        });
-      }
-
-      // ---------- Data layer ----------
-      window.MMLI = {
-        db,
-        async init() { await openDB(); await this.loadSettings(); this.renderDashboard(); },
-        async loadSettings() {
-          const s = await storeGetAll('settings');
-          const comp = s.find(x=>x.key==='currentCompetitionId');
-          if(comp) currentCompetitionId = comp.value;
-          const div = s.find(x=>x.key==='currentDivision');
-          if(div) currentDivision = div.value;
-        },
-        async setCurrentCompetition(id) {
-          currentCompetitionId = id;
-          await storePut('settings', {key:'currentCompetitionId', value:id});
-          await this.loadSettings();
-        },
-        async setCurrentDivision(div) {
-          currentDivision = div;
-          await storePut('settings', {key:'currentDivision', value:div});
-        },
-        async getCompetitions() { return await storeGetAll('competitions'); },
-        async getSchools() { return await storeGetAll('schools'); },
-        async getStudents() { return await storeGetAll('students'); },
-        async getGames() { return await storeGetAll('games'); },
-        async getAnswers() { return await storeGetAll('answerRecords'); },
-        // competitions crud
-        async createCompetition(data) {
-          if(!data.id) data.id = 'comp_'+uid();
-          await storePut('competitions', data);
-          return data;
-        },
-        // schools
-        async createSchool(data) { if(!data.id) data.id='sch_'+uid(); await storePut('schools', data); return data; },
-        // students
-        async createStudent(data) { if(!data.id) data.id='MMLI-STU-'+String(100000+Math.floor(Math.random()*900000)); await storePut('students', data); return data; },
-        // games
-        async createGame(data) { if(!data.id) data.id='game_'+uid(); await storePut('games', data); return data; },
-        // answer records
-        async recordAnswer(data) { if(!data.id) data.id='ans_'+uid(); data.timestamp = new Date().toISOString(); await storePut('answerRecords', data); return data; },
-        // stats calculations
-        calcStats(answers, studentId) {
-          const a = answers.filter(r=>r.studentId===studentId);
-          let total=0, correct=0, wrong=0, cats={English:0,Science:0,History:0,Mathematics:0,'General Knowledge':0};
-          a.forEach(r=>{ total++; if(r.result==='Correct') correct++; else wrong++; if(cats[r.category]!==undefined) cats[r.category]++; });
-          return { total, correct, wrong, accuracy: total?Math.round(correct/total*100):0, ...cats };
-        },
-        async renderDashboard() {
-          const comps = await this.getCompetitions();
-          const games = await this.getGames();
-          const students = await this.getStudents();
-          const schools = await this.getSchools();
-          const answers = await this.getAnswers();
-          const activeComp = comps.find(c=>c.id===currentCompetitionId);
-          const html = `
-            <div class="card"><div class="flex"><span class="stat-label">Active Competition</span><span class="stat-number">${activeComp?activeComp.name:'None'}</span></div></div>
-            <div class="grid-2">
-              <div class="card"><div class="stat-number">${games.length}</div><div class="stat-label">Games</div></div>
-              <div class="card"><div class="stat-number">${students.length}</div><div class="stat-label">Students</div></div>
-              <div class="card"><div class="stat-number">${schools.length}</div><div class="stat-label">Schools</div></div>
-              <div class="card"><div class="stat-number">${answers.length}</div><div class="stat-label">Questions Recorded</div></div>
+    <div class="app" id="app">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 100 100" width="48" height="48"><rect width="100" height="100" fill="#0e2c57" rx="20"/><text x="50" y="65" text-anchor="middle" fill="#f9c040" font-size="38" font-weight="800" font-family="Segoe UI, sans-serif">MM</text><text x="50" y="90" text-anchor="middle" fill="#f9c040" font-size="18" font-weight="600">LI</text></svg>
+                <div class="logo-text">MIND <span>MASTERS</span> · LI</div>
             </div>
-            <div class="card"><div class="flex gap-8"><span class="stat-label">Division:</span> 
-              <button class="btn btn-sm ${currentDivision==='Junior High'?'btn-success':'btn-outline'}" onclick="MMLI.setDivision('Junior High');MMLI.renderDashboard()">Junior High</button>
-              <button class="btn btn-sm ${currentDivision==='Senior High'?'btn-success':'btn-outline'}" onclick="MMLI.setDivision('Senior High');MMLI.renderDashboard()">Senior High</button>
-            </div></div>
-          `;
-          document.getElementById('pageContent').innerHTML = html;
-        },
-        async setDivision(div) { await this.setCurrentDivision(div); },
-        // quick navigation
-        navigate(section) {
-          document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-          document.querySelector(`.nav-btn[data-section="${section}"]`)?.classList.add('active');
-          if(section==='dashboard') this.renderDashboard();
-          else if(section==='competitions') this.renderCompetitions();
-          else if(section==='schools') this.renderSchools();
-          else if(section==='students') this.renderStudents();
-          else if(section==='games') this.renderGames();
-          else if(section==='live') this.renderLive();
-          else if(section==='stats') this.renderStats();
-          else if(section==='awards') this.renderAwards();
-          else if(section==='backup') this.renderBackup();
-        },
-        // Placeholder renders for core sections (production ready)
-        renderCompetitions() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>🏆 Competitions</h2><button class="btn btn-sm" onclick="alert('Create competition form')">+ New</button><div class="mt-12">List competitions (implement full CRUD)</div></div>`;
-        },
-        renderSchools() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>🏫 Schools</h2><button class="btn btn-sm" onclick="alert('Add school form')">+ Add</button><div class="mt-12">Schools list (full CRUD)</div></div>`;
-        },
-        renderStudents() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>👨‍🎓 Students</h2><button class="btn btn-sm" onclick="alert('Add student form')">+ Register</button><div class="mt-12">Student list with search</div></div>`;
-        },
-        renderGames() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>🎮 Games</h2><button class="btn btn-sm" onclick="alert('Create game wizard')">+ New Game</button><div class="mt-12">Games list</div></div>`;
-        },
-        renderLive() {
-          document.getElementById('pageContent').innerHTML = `
-            <div class="card"><div class="live-header"><span>⚡ LIVE GAME</span><span class="question-badge">Q1 · Mathematics</span></div>
-            <div class="category-row"><button class="cat-btn active">Math</button><button class="cat-btn">Science</button><button class="cat-btn">English</button><button class="cat-btn">History</button><button class="cat-btn">GK</button></div>
-            <div><strong>School A</strong><div class="student-grid">${['A1','A2','A3','A4','A5','A6'].map(s=>`<div class="student-btn">${s}</div>`).join('')}</div></div>
-            <div><strong>School B</strong><div class="student-grid">${['B1','B2','B3','B4','B5','B6'].map(s=>`<div class="student-btn">${s}</div>`).join('')}</div></div>
-            <div class="flex"><button class="btn btn-success">✔ Correct</button><button class="btn btn-danger">✘ Wrong</button><button class="btn btn-outline">End Half</button></div>
-            <p class="text-muted mt-12">Full live scoring & navigation implemented in production version</p>
-          </div>`;
-        },
-        renderStats() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>📈 Statistics</h2><p>Live leaderboards, category stats, accuracy</p><div class="table-wrap"><table><tr><th>Student</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th></tr><tr><td colspan="7" class="text-muted">Data calculated from answer records</td></tr></table></div></div>`;
-        },
-        renderAwards() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>🏅 Awards</h2><div class="grid-2"><div class="card"><h3>Junior High</h3><p>Best Math: —</p><p>Best Science: —</p><p>Best English: —</p><p>Best History: —</p><p>MVQ: —</p></div><div class="card"><h3>Senior High</h3><p>Best Math: —</p><p>Best Science: —</p><p>Best English: —</p><p>Best History: —</p><p>MVQ: —</p></div></div></div>`;
-        },
-        renderBackup() {
-          document.getElementById('pageContent').innerHTML = `<div class="card"><h2>💾 Backup & Restore</h2><button class="btn" onclick="alert('Export JSON backup')">📤 Export Database</button> <button class="btn btn-outline" onclick="alert('Import JSON')">📥 Import</button><p class="text-muted mt-12">Last backup: never</p></div>`;
-        }
-      };
+            <div class="subhead">OFFLINE v1</div>
+        </div>
+        <div class="nav-row" id="navRow">
+            <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+            <button class="nav-btn" data-section="competitions">🏆 Comp</button>
+            <button class="nav-btn" data-section="schools">🏫 Schools</button>
+            <button class="nav-btn" data-section="students">👨‍🎓 Students</button>
+            <button class="nav-btn" data-section="games">🎮 Games</button>
+            <button class="nav-btn" data-section="live">⚡ Live</button>
+            <button class="nav-btn" data-section="stats">📈 Stats</button>
+            <button class="nav-btn" data-section="awards">🏅 Awards</button>
+            <button class="nav-btn" data-section="backup">💾 Backup</button>
+        </div>
+        <div id="pageContent"></div>
+        <div id="toast" class="toast">Ready</div>
+    </div>
+    <script>
+        // ============================================================
+        // MMLI COMPETITION SYSTEM - Full Production Implementation
+        // ============================================================
+        (function() {
+            const DB_NAME = 'MMLI_DB';
+            const DB_VER = 2;
+            let db = null;
+            let currentCompetitionId = null;
+            let currentDivision = 'Junior High';
 
-      // nav events
-      document.addEventListener('DOMContentLoaded', ()=>{
-        document.querySelectorAll('.nav-btn').forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            const section = btn.dataset.section;
-            window.MMLI.navigate(section);
-          });
-        });
-        window.MMLI.init().then(()=>{
-          toast('MMLI System ready');
-        }).catch(e=>{
-          toast('DB error: '+e.message);
-        });
-      });
+            // --- Live game state ---
+            let liveGame = null; // current game object
+            let liveHalf = 1; // 1 or 2
+            let liveQuestionNumber = 0;
+            let liveCategory = 'Mathematics';
+            let liveSelectedStudent = null; // student id
+            let liveAnswers = []; // answer records for this game (temp, saved on end)
 
-      // PWA service worker registration (inline minimal)
-      if('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('data:text/javascript,'+encodeURIComponent(`
-          self.addEventListener('install', e=>{ e.waitUntil(self.skipWaiting()); });
-          self.addEventListener('activate', e=>{ e.waitUntil(self.clients.claim()); });
-          self.addEventListener('fetch', e=>{ e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))); });
-        `), {scope: './'}).catch(()=>{});
-      }
-    })();
-  </script>
+            function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+            function toast(msg, dur = 2500) {
+                const t = document.getElementById('toast');
+                t.textContent = msg;
+                t.classList.add('show');
+                clearTimeout(t._hide);
+                t._hide = setTimeout(() => t.classList.remove('show'), dur);
+            }
+
+            // --- IndexedDB ---
+            function openDB() {
+                return new Promise((res, rej) => {
+                    const req = indexedDB.open(DB_NAME, DB_VER);
+                    req.onupgradeneeded = (e) => {
+                        const d = e.target.result;
+                        if (!d.objectStoreNames.contains('competitions')) d.createObjectStore('competitions', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('schools')) d.createObjectStore('schools', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('students')) d.createObjectStore('students', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('games')) d.createObjectStore('games', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('answerRecords')) d.createObjectStore('answerRecords', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
+                        // indexes
+                        if (!d.objectStoreNames.contains('answerRecords')) return;
+                        const store = d.objectStore('answerRecords');
+                        if (!store.indexNames.contains('gameId')) store.createIndex('gameId', 'gameId', { unique: false });
+                        if (!store.indexNames.contains('studentId')) store.createIndex('studentId', 'studentId', { unique: false });
+                        if (!store.indexNames.contains('competitionId')) store.createIndex('competitionId', 'competitionId', { unique: false });
+                        if (!store.indexNames.contains('division')) store.createIndex('division', 'division', { unique: false });
+                    };
+                    req.onsuccess = (e) => { db = e.target.result;
+                        res(db); };
+                    req.onerror = (e) => { rej(e.target.error); };
+                });
+            }
+
+            function storePut(storeName, data) {
+                return new Promise((res, rej) => {
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    const req = store.put(data);
+                    req.onsuccess = () => res(req.result);
+                    req.onerror = () => rej(req.error);
+                });
+            }
+
+            function storeGetAll(storeName) {
+                return new Promise((res, rej) => {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const req = store.getAll();
+                    req.onsuccess = () => res(req.result);
+                    req.onerror = () => rej(req.error);
+                });
+            }
+
+            function storeDelete(storeName, id) {
+                return new Promise((res, rej) => {
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    const req = store.delete(id);
+                    req.onsuccess = () => res();
+                    req.onerror = () => rej(req.error);
+                });
+            }
+
+            function storeGetByIndex(storeName, indexName, value) {
+                return new Promise((res, rej) => {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const idx = store.index(indexName);
+                    const req = idx.getAll(value);
+                    req.onsuccess = () => res(req.result);
+                    req.onerror = () => rej(req.error);
+                });
+            }
+
+            // --- Data API ---
+            const API = {
+                async init() {
+                    await openDB();
+                    await this.loadSettings();
+                },
+                async loadSettings() {
+                    const s = await storeGetAll('settings');
+                    const comp = s.find(x => x.key === 'currentCompetitionId');
+                    if (comp) currentCompetitionId = comp.value;
+                    const div = s.find(x => x.key === 'currentDivision');
+                    if (div) currentDivision = div.value;
+                },
+                async setCurrentCompetition(id) {
+                    currentCompetitionId = id;
+                    await storePut('settings', { key: 'currentCompetitionId', value: id });
+                },
+                async setCurrentDivision(div) {
+                    currentDivision = div;
+                    await storePut('settings', { key: 'currentDivision', value: div });
+                },
+                async getCompetitions() { return await storeGetAll('competitions'); },
+                async getSchools() { return await storeGetAll('schools'); },
+                async getStudents() { return await storeGetAll('students'); },
+                async getGames() { return await storeGetAll('games'); },
+                async getAnswers() { return await storeGetAll('answerRecords'); },
+                async getAnswersForGame(gameId) {
+                    return await storeGetByIndex('answerRecords', 'gameId', gameId);
+                },
+                async createCompetition(data) {
+                    if (!data.id) data.id = 'comp_' + uid();
+                    data.created = new Date().toISOString();
+                    await storePut('competitions', data);
+                    return data;
+                },
+                async updateCompetition(data) {
+                    await storePut('competitions', data);
+                    return data;
+                },
+                async createSchool(data) {
+                    if (!data.id) data.id = 'sch_' + uid();
+                    await storePut('schools', data);
+                    return data;
+                },
+                async updateSchool(data) {
+                    await storePut('schools', data);
+                    return data;
+                },
+                async createStudent(data) {
+                    if (!data.id) data.id = 'MMLI-STU-' + String(100000 + Math.floor(Math.random() * 900000));
+                    await storePut('students', data);
+                    return data;
+                },
+                async updateStudent(data) {
+                    await storePut('students', data);
+                    return data;
+                },
+                async createGame(data) {
+                    if (!data.id) data.id = 'game_' + uid();
+                    data.status = data.status || 'Scheduled';
+                    data.firstHalfStatus = 'Not Started';
+                    data.secondHalfStatus = 'Not Started';
+                    await storePut('games', data);
+                    return data;
+                },
+                async updateGame(data) {
+                    await storePut('games', data);
+                    return data;
+                },
+                async recordAnswer(data) {
+                    if (!data.id) data.id = 'ans_' + uid();
+                    data.timestamp = new Date().toISOString();
+                    await storePut('answerRecords', data);
+                    return data;
+                },
+                async deleteAnswer(id) {
+                    await storeDelete('answerRecords', id);
+                },
+                async getAnswersForCompetition(compId) {
+                    return await storeGetByIndex('answerRecords', 'competitionId', compId);
+                },
+                async getStudentsBySchool(schoolId) {
+                    const all = await this.getStudents();
+                    return all.filter(s => s.school === schoolId);
+                },
+                // stats
+                calcStudentStats(answers, studentId) {
+                    const a = answers.filter(r => r.studentId === studentId);
+                    let total = 0,
+                        correct = 0,
+                        wrong = 0;
+                    const cats = { English: 0, Science: 0, History: 0, Mathematics: 0, 'General Knowledge': 0 };
+                    a.forEach(r => {
+                        total++;
+                        if (r.result === 'Correct') correct++;
+                        else wrong++;
+                        if (cats[r.category] !== undefined) cats[r.category]++;
+                    });
+                    return { total, correct, wrong, accuracy: total ? Math.round(correct / total * 100) : 0, ...cats };
+                },
+                // award winners per division
+                getAwardWinners(answers, students, division) {
+                    const divStudents = students.filter(s => s.division === division);
+                    const divAnswers = answers.filter(a => a.division === division);
+                    const stats = divStudents.map(stu => {
+                        const s = this.calcStudentStats(divAnswers, stu.id);
+                        return { ...stu, stats: s };
+                    });
+                    const categories = ['Mathematics', 'Science', 'English', 'History'];
+                    const awards = {};
+                    categories.forEach(cat => {
+                        const sorted = [...stats].filter(s => s.stats[cat] > 0).sort((a, b) => b.stats[cat] - a.stats[cat]);
+                        if (sorted.length) {
+                            const top = sorted[0];
+                            const ties = sorted.filter(s => s.stats[cat] === top.stats[cat]);
+                            awards['Best ' + cat] = ties.map(t => t.fullName + ' (' + t.stats[cat] + ')').join(' & ');
+                        } else {
+                            awards['Best ' + cat] = '—';
+                        }
+                    });
+                    // MVQ (total across all categories)
+                    const sortedMVQ = [...stats].filter(s => s.stats.total > 0).sort((a, b) => b.stats.total - a.stats.total);
+                    if (sortedMVQ.length) {
+                        const top = sortedMVQ[0];
+                        const ties = sortedMVQ.filter(s => s.stats.total === top.stats.total);
+                        awards['MVQ'] = ties.map(t => t.fullName + ' (' + t.stats.total + ')').join(' & ');
+                    } else {
+                        awards['MVQ'] = '—';
+                    }
+                    return awards;
+                }
+            };
+
+            // --- UI Navigation ---
+            const nav = {
+                currentSection: 'dashboard',
+                go(section) {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector(`.nav-btn[data-section="${section}"]`)?.classList.add('active');
+                    this.currentSection = section;
+                    this.render(section);
+                },
+                render(section) {
+                    switch (section) {
+                        case 'dashboard':
+                            renderDashboard();
+                            break;
+                        case 'competitions':
+                            renderCompetitions();
+                            break;
+                        case 'schools':
+                            renderSchools();
+                            break;
+                        case 'students':
+                            renderStudents();
+                            break;
+                        case 'games':
+                            renderGames();
+                            break;
+                        case 'live':
+                            renderLive();
+                            break;
+                        case 'stats':
+                            renderStats();
+                            break;
+                        case 'awards':
+                            renderAwards();
+                            break;
+                        case 'backup':
+                            renderBackup();
+                            break;
+                    }
+                }
+            };
+
+            // --- Render functions ---
+            async function renderDashboard() {
+                const comps = await API.getCompetitions();
+                const games = await API.getGames();
+                const students = await API.getStudents();
+                const schools = await API.getSchools();
+                const answers = await API.getAnswers();
+                const active = comps.find(c => c.id === currentCompetitionId);
+                const compGames = games.filter(g => g.competition === currentCompetitionId);
+                const compAnswers = answers.filter(a => a.competitionId === currentCompetitionId);
+                const html = `
+                    <div class="card"><div class="flex"><span class="stat-label">Active Competition</span>
+                        <span class="stat-number" style="font-size:1.6rem">${active ? active.name : 'None selected'}</span>
+                        <button class="btn btn-sm btn-outline" onclick="nav.go('competitions')">Change</button>
+                    </div></div>
+                    <div class="grid-2">
+                        <div class="card"><div class="stat-number">${compGames.length}</div><div class="stat-label">Games</div></div>
+                        <div class="card"><div class="stat-number">${students.filter(s=>s.division===currentDivision).length}</div><div class="stat-label">Students (${currentDivision})</div></div>
+                        <div class="card"><div class="stat-number">${schools.length}</div><div class="stat-label">Schools</div></div>
+                        <div class="card"><div class="stat-number">${compAnswers.length}</div><div class="stat-label">Questions Recorded</div></div>
+                    </div>
+                    <div class="card"><div class="flex gap-8"><span class="stat-label">Division:</span> 
+                        <button class="btn btn-sm ${currentDivision==='Junior High'?'btn-success':'btn-outline'}" onclick="setDivision('Junior High')">Junior High</button>
+                        <button class="btn btn-sm ${currentDivision==='Senior High'?'btn-success':'btn-outline'}" onclick="setDivision('Senior High')">Senior High</button>
+                    </div></div>
+                `;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            async function setDivision(div) {
+                await API.setCurrentDivision(div);
+                nav.go('dashboard');
+            }
+
+            // --- Competitions ---
+            async function renderCompetitions() {
+                const comps = await API.getCompetitions();
+                let html = `<div class="card"><h2>🏆 Competitions</h2><button class="btn btn-sm" onclick="showCompForm()">+ New Competition</button><div class="mt-12">`;
+                if (comps.length === 0) html += `<p class="text-muted">No competitions yet. Create one!</p>`;
+                else {
+                    html += `<div class="table-wrap"><table><tr><th>Name</th><th>Year</th><th>Status</th><th>Action</th></tr>`;
+                    comps.forEach(c => {
+                        const active = c.id === currentCompetitionId ? '✅ Active' : '';
+                        html += `<tr><td>${c.name}</td><td>${c.year||''}</td><td>${c.status||'Draft'} ${active}</td>
+                        <td><button class="btn btn-sm" onclick="selectComp('${c.id}')">Select</button>
+                        <button class="btn btn-sm btn-outline" onclick="showCompForm('${c.id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteComp('${c.id}')">×</button></td></tr>`;
+                    });
+                    html += `</table></div>`;
+                }
+                html += `</div></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.showCompForm = async function(id) {
+                const comps = await API.getCompetitions();
+                const existing = id ? comps.find(c => c.id === id) : null;
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal">
+                        <h2>${existing ? 'Edit' : 'New'} Competition</h2>
+                        <input class="input-field" id="compName" placeholder="Name" value="${existing?existing.name:''}">
+                        <input class="input-field" id="compYear" placeholder="Year" value="${existing?existing.year:''}">
+                        <input class="input-field" id="compVenue" placeholder="Venue" value="${existing?existing.venue:''}">
+                        <input class="input-field" id="compOrganizer" placeholder="Organizer" value="${existing?existing.organizer:''}">
+                        <select class="input-field" id="compStatus"><option value="Draft">Draft</option><option value="Active">Active</option><option value="Completed">Completed</option><option value="Finalized">Finalized</option></select>
+                        <div class="flex"><button class="btn" onclick="saveComp('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                if (existing) document.getElementById('compStatus').value = existing.status || 'Draft';
+            };
+
+            window.saveComp = async function(id) {
+                const name = document.getElementById('compName').value;
+                if (!name) { toast('Name required'); return; }
+                const data = {
+                    id: id || undefined,
+                    name,
+                    year: document.getElementById('compYear').value,
+                    venue: document.getElementById('compVenue').value,
+                    organizer: document.getElementById('compOrganizer').value,
+                    status: document.getElementById('compStatus').value,
+                };
+                if (id) {
+                    const comps = await API.getCompetitions();
+                    const existing = comps.find(c => c.id === id);
+                    Object.assign(existing, data);
+                    await API.updateCompetition(existing);
+                } else {
+                    await API.createCompetition(data);
+                }
+                document.querySelector('.modal-overlay')?.remove();
+                toast('Competition saved');
+                nav.go('competitions');
+            };
+
+            window.selectComp = async function(id) {
+                await API.setCurrentCompetition(id);
+                toast('Competition selected');
+                nav.go('dashboard');
+            };
+
+            window.deleteComp = async function(id) {
+                if (!confirm('Delete competition?')) return;
+                await storeDelete('competitions', id);
+                if (currentCompetitionId === id) await API.setCurrentCompetition(null);
+                toast('Deleted');
+                nav.go('competitions');
+            };
+
+            // --- Schools ---
+            async function renderSchools() {
+                const schools = await API.getSchools();
+                let html = `<div class="card"><h2>🏫 Schools</h2><button class="btn btn-sm" onclick="showSchoolForm()">+ Add School</button><div class="mt-12">`;
+                if (schools.length === 0) html += `<p class="text-muted">No schools registered.</p>`;
+                else {
+                    html += `<div class="table-wrap"><table><tr><th>Name</th><th>Type</th><th>Contact</th><th>Action</th></tr>`;
+                    schools.forEach(s => {
+                        html += `<tr><td>${s.name}</td><td>${s.schoolType||''}</td><td>${s.contact||''}</td>
+                        <td><button class="btn btn-sm btn-outline" onclick="showSchoolForm('${s.id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSchool('${s.id}')">×</button></td></tr>`;
+                    });
+                    html += `</table></div>`;
+                }
+                html += `</div></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.showSchoolForm = async function(id) {
+                const schools = await API.getSchools();
+                const existing = id ? schools.find(s => s.id === id) : null;
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal">
+                        <h2>${existing ? 'Edit' : 'New'} School</h2>
+                        <input class="input-field" id="schName" placeholder="School Name" value="${existing?existing.name:''}">
+                        <input class="input-field" id="schContact" placeholder="Contact" value="${existing?existing.contact:''}">
+                        <select class="input-field" id="schType"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option><option value="Both">Both</option></select>
+                        <div class="flex"><button class="btn" onclick="saveSchool('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                if (existing) document.getElementById('schType').value = existing.schoolType || 'Both';
+            };
+
+            window.saveSchool = async function(id) {
+                const name = document.getElementById('schName').value;
+                if (!name) { toast('Name required'); return; }
+                const data = {
+                    id: id || undefined,
+                    name,
+                    contact: document.getElementById('schContact').value,
+                    schoolType: document.getElementById('schType').value,
+                };
+                if (id) {
+                    const schools = await API.getSchools();
+                    const existing = schools.find(s => s.id === id);
+                    Object.assign(existing, data);
+                    await API.updateSchool(existing);
+                } else {
+                    await API.createSchool(data);
+                }
+                document.querySelector('.modal-overlay')?.remove();
+                toast('School saved');
+                nav.go('schools');
+            };
+
+            window.deleteSchool = async function(id) {
+                if (!confirm('Delete school?')) return;
+                await storeDelete('schools', id);
+                toast('Deleted');
+                nav.go('schools');
+            };
+
+            // --- Students ---
+            async function renderStudents() {
+                const students = await API.getStudents();
+                const schools = await API.getSchools();
+                let html = `<div class="card"><h2>👨‍🎓 Students</h2><button class="btn btn-sm" onclick="showStudentForm()">+ Register Student</button><div class="mt-12">`;
+                if (students.length === 0) html += `<p class="text-muted">No students registered.</p>`;
+                else {
+                    html += `<div class="table-wrap"><table><tr><th>ID</th><th>Name</th><th>School</th><th>Division</th><th>Action</th></tr>`;
+                    students.forEach(stu => {
+                        const sch = schools.find(s => s.id === stu.school);
+                        html += `<tr><td>${stu.id}</td><td>${stu.fullName}</td><td>${sch?sch.name:'?'}</td><td>${stu.division}</td>
+                        <td><button class="btn btn-sm btn-outline" onclick="showStudentForm('${stu.id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteStudent('${stu.id}')">×</button></td></tr>`;
+                    });
+                    html += `</table></div>`;
+                }
+                html += `</div></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.showStudentForm = async function(id) {
+                const students = await API.getStudents();
+                const schools = await API.getSchools();
+                const existing = id ? students.find(s => s.id === id) : null;
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                let schoolOptions = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                modal.innerHTML = `
+                    <div class="modal">
+                        <h2>${existing ? 'Edit' : 'New'} Student</h2>
+                        <input class="input-field" id="stuName" placeholder="Full Name" value="${existing?existing.fullName:''}">
+                        <select class="input-field" id="stuSchool">${schoolOptions}</select>
+                        <select class="input-field" id="stuDivision"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option></select>
+                        <input class="input-field" id="stuGrade" placeholder="Grade/Class" value="${existing?existing.grade:''}">
+                        <div class="flex"><button class="btn" onclick="saveStudent('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                if (existing) {
+                    document.getElementById('stuSchool').value = existing.school || '';
+                    document.getElementById('stuDivision').value = existing.division || 'Junior High';
+                    document.getElementById('stuGrade').value = existing.grade || '';
+                }
+            };
+
+            window.saveStudent = async function(id) {
+                const name = document.getElementById('stuName').value;
+                if (!name) { toast('Name required'); return; }
+                const data = {
+                    id: id || undefined,
+                    fullName: name,
+                    school: document.getElementById('stuSchool').value,
+                    division: document.getElementById('stuDivision').value,
+                    grade: document.getElementById('stuGrade').value,
+                };
+                if (id) {
+                    const students = await API.getStudents();
+                    const existing = students.find(s => s.id === id);
+                    Object.assign(existing, data);
+                    await API.updateStudent(existing);
+                } else {
+                    await API.createStudent(data);
+                }
+                document.querySelector('.modal-overlay')?.remove();
+                toast('Student saved');
+                nav.go('students');
+            };
+
+            window.deleteStudent = async function(id) {
+                if (!confirm('Delete student?')) return;
+                await storeDelete('students', id);
+                toast('Deleted');
+                nav.go('students');
+            };
+
+            // --- Games ---
+            async function renderGames() {
+                const games = await API.getGames();
+                const comps = await API.getCompetitions();
+                const schools = await API.getSchools();
+                let html = `<div class="card"><h2>🎮 Games</h2><button class="btn btn-sm" onclick="showGameForm()">+ New Game</button><div class="mt-12">`;
+                const filtered = games.filter(g => g.competition === currentCompetitionId);
+                if (filtered.length === 0) html += `<p class="text-muted">No games in this competition.</p>`;
+                else {
+                    html += `<div class="table-wrap"><table><tr><th>#</th><th>Division</th><th>School A</th><th>School B</th><th>Status</th><th>Action</th></tr>`;
+                    filtered.forEach(g => {
+                        const schA = schools.find(s => s.id === g.schoolA);
+                        const schB = schools.find(s => s.id === g.schoolB);
+                        html += `<tr><td>${g.gameNumber||'?'}</td><td>${g.division}</td><td>${schA?schA.name:'?'}</td><td>${schB?schB.name:'?'}</td><td>${g.status}</td>
+                        <td><button class="btn btn-sm btn-outline" onclick="showGameForm('${g.id}')">Edit</button>
+                        <button class="btn btn-sm" onclick="startLiveGame('${g.id}')">▶ Live</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteGame('${g.id}')">×</button></td></tr>`;
+                    });
+                    html += `</table></div>`;
+                }
+                html += `</div></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.showGameForm = async function(id) {
+                const games = await API.getGames();
+                const comps = await API.getCompetitions();
+                const schools = await API.getSchools();
+                const existing = id ? games.find(g => g.id === id) : null;
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                let schoolOpts = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                modal.innerHTML = `
+                    <div class="modal">
+                        <h2>${existing ? 'Edit' : 'New'} Game</h2>
+                        <input class="input-field" id="gameNum" placeholder="Game Number" value="${existing?existing.gameNumber:''}">
+                        <select class="input-field" id="gameDivision"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option></select>
+                        <select class="input-field" id="gameSchoolA">${schoolOpts}</select>
+                        <select class="input-field" id="gameSchoolB">${schoolOpts}</select>
+                        <div class="flex"><button class="btn" onclick="saveGame('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                if (existing) {
+                    document.getElementById('gameNum').value = existing.gameNumber || '';
+                    document.getElementById('gameDivision').value = existing.division || 'Junior High';
+                    document.getElementById('gameSchoolA').value = existing.schoolA || '';
+                    document.getElementById('gameSchoolB').value = existing.schoolB || '';
+                }
+            };
+
+            window.saveGame = async function(id) {
+                const gameNum = document.getElementById('gameNum').value;
+                if (!gameNum) { toast('Game number required'); return; }
+                const schoolA = document.getElementById('gameSchoolA').value;
+                const schoolB = document.getElementById('gameSchoolB').value;
+                if (schoolA === schoolB) { toast('Schools must be different'); return; }
+                const data = {
+                    id: id || undefined,
+                    competition: currentCompetitionId,
+                    division: document.getElementById('gameDivision').value,
+                    gameNumber: parseInt(gameNum),
+                    schoolA,
+                    schoolB,
+                    status: 'Scheduled',
+                };
+                if (id) {
+                    const games = await API.getGames();
+                    const existing = games.find(g => g.id === id);
+                    Object.assign(existing, data);
+                    await API.updateGame(existing);
+                } else {
+                    await API.createGame(data);
+                }
+                document.querySelector('.modal-overlay')?.remove();
+                toast('Game saved');
+                nav.go('games');
+            };
+
+            window.deleteGame = async function(id) {
+                if (!confirm('Delete game? All answers will be lost.')) return;
+                const answers = await API.getAnswersForGame(id);
+                for (let a of answers) await API.deleteAnswer(a.id);
+                await storeDelete('games', id);
+                toast('Deleted');
+                nav.go('games');
+            };
+
+            // --- Live Game ---
+            window.startLiveGame = async function(gameId) {
+                const games = await API.getGames();
+                const game = games.find(g => g.id === gameId);
+                if (!game) { toast('Game not found'); return; }
+                liveGame = game;
+                liveHalf = 1;
+                liveQuestionNumber = 0;
+                liveCategory = 'Mathematics';
+                liveSelectedStudent = null;
+                liveAnswers = [];
+                // Load existing answers for this game
+                const existingAnswers = await API.getAnswersForGame(gameId);
+                if (existingAnswers.length > 0) {
+                    liveAnswers = existingAnswers;
+                    // determine half and question number from last record
+                    const sorted = [...existingAnswers].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+                    const last = sorted[sorted.length - 1];
+                    liveHalf = last.half || 1;
+                    liveQuestionNumber = sorted.length;
+                    // set category from last
+                    liveCategory = last.category || 'Mathematics';
+                }
+                nav.go('live');
+                renderLive();
+            };
+
+            async function renderLive() {
+                if (!liveGame) {
+                    document.getElementById('pageContent').innerHTML =
+                        `<div class="card"><h2>⚡ Live Game</h2><p class="text-muted">Select a game from the Games section and click "Live".</p></div>`;
+                    return;
+                }
+                const schools = await API.getSchools();
+                const students = await API.getStudents();
+                const schA = schools.find(s => s.id === liveGame.schoolA);
+                const schB = schools.find(s => s.id === liveGame.schoolB);
+                const stuA = students.filter(s => s.school === liveGame.schoolA && s.division === liveGame.division);
+                const stuB = students.filter(s => s.school === liveGame.schoolB && s.division === liveGame.division);
+                const allStu = [...stuA, ...stuB];
+
+                // Build student buttons
+                let studentButtons = '';
+                allStu.forEach(stu => {
+                    const answered = liveAnswers.find(a => a.studentId === stu.id && a.half === liveHalf && a
+                    .questionNumber === liveQuestionNumber);
+                    let cls = 'student-btn';
+                    if (answered) cls += answered.result === 'Correct' ? ' correct' : ' wrong';
+                    if (liveSelectedStudent === stu.id) cls += ' selected';
+                    studentButtons +=
+                        `<div class="${cls}" onclick="liveSelectStudent('${stu.id}')">${stu.fullName}</div>`;
+                });
+
+                // Category buttons
+                const cats = ['Mathematics', 'Science', 'English', 'History', 'General Knowledge'];
+                let catButtons = cats.map(c =>
+                    `<button class="cat-btn ${c===liveCategory?'active':''}" onclick="liveSetCategory('${c}')">${c}</button>`
+                ).join('');
+
+                // Stats summary for this game
+                let statsHtml = `<div class="table-wrap"><table><tr><th>Student</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th></tr>`;
+                allStu.forEach(stu => {
+                    const s = API.calcStudentStats(liveAnswers, stu.id);
+                    statsHtml +=
+                        `<tr><td>${stu.fullName}</td><td>${s.Mathematics||0}</td><td>${s.Science||0}</td><td>${s.English||0}</td><td>${s.History||0}</td><td>${s['General Knowledge']||0}</td><td>${s.total}</td></tr>`;
+                });
+                statsHtml += `</table></div>`;
+
+                const html = `
+                    <div class="card">
+                        <div class="live-header">
+                            <span>⚡ ${liveGame.gameNumber} · ${liveGame.division}</span>
+                            <span>${schA?schA.name:'?'} vs ${schB?schB.name:'?'}</span>
+                            <span class="question-badge">Q${liveQuestionNumber+1} · ${liveCategory}</span>
+                            <span>Half ${liveHalf}</span>
+                        </div>
+                        <div class="category-row">${catButtons}</div>
+                        <div><strong>Select student who answered:</strong></div>
+                        <div class="student-grid">${studentButtons}</div>
+                        <div class="flex">
+                            <button class="btn btn-success" onclick="liveRecord('Correct')">✔ Correct</button>
+                            <button class="btn btn-danger" onclick="liveRecord('Wrong')">✘ Wrong</button>
+                            <button class="btn btn-outline" onclick="liveNextQuestion()">Next Q →</button>
+                            <button class="btn btn-outline" onclick="liveEndHalf()">⏹ End Half</button>
+                            <button class="btn btn-outline" onclick="liveEndGame()">🏁 End Game</button>
+                        </div>
+                        <div class="mt-12">${statsHtml}</div>
+                        <div class="mt-12"><button class="btn btn-sm" onclick="liveSaveAndExit()">💾 Save & Exit</button></div>
+                    </div>
+                `;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.liveSetCategory = function(cat) {
+                liveCategory = cat;
+                renderLive();
+            };
+
+            window.liveSelectStudent = function(studentId) {
+                liveSelectedStudent = studentId;
+                renderLive();
+            };
+
+            window.liveRecord = async function(result) {
+                if (!liveSelectedStudent) { toast('Select a student first'); return; }
+                // Check if already answered this question
+                const existing = liveAnswers.find(a =>
+                    a.half === liveHalf &&
+                    a.questionNumber === liveQuestionNumber &&
+                    a.category === liveCategory
+                );
+                if (existing) {
+                    // Update
+                    existing.studentId = liveSelectedStudent;
+                    existing.result = result;
+                    existing.timestamp = new Date().toISOString();
+                    await API.recordAnswer(existing);
+                    toast('Updated answer');
+                } else {
+                    const record = {
+                        competitionId: liveGame.competition,
+                        division: liveGame.division,
+                        gameId: liveGame.id,
+                        half: liveHalf,
+                        questionNumber: liveQuestionNumber,
+                        category: liveCategory,
+                        studentId: liveSelectedStudent,
+                        schoolId: liveSelectedStudent.startsWith('MMLI') ? liveGame.schoolA : liveGame.schoolA, // simplified
+                        result: result,
+                    };
+                    // get school from student
+                    const students = await API.getStudents();
+                    const stu = students.find(s => s.id === liveSelectedStudent);
+                    if (stu) record.schoolId = stu.school;
+                    await API.recordAnswer(record);
+                    liveAnswers.push(record);
+                    toast('Recorded');
+                }
+                liveSelectedStudent = null;
+                liveQuestionNumber++;
+                renderLive();
+            };
+
+            window.liveNextQuestion = function() {
+                liveSelectedStudent = null;
+                liveQuestionNumber++;
+                renderLive();
+            };
+
+            window.liveEndHalf = function() {
+                if (!confirm('End Half ' + liveHalf + '?')) return;
+                if (liveHalf === 1) {
+                    liveHalf = 2;
+                    liveQuestionNumber = 0;
+                } else {
+                    toast('Game already in second half');
+                }
+                liveSelectedStudent = null;
+                renderLive();
+            };
+
+            window.liveEndGame = function() {
+                if (!confirm('End game and save all answers?')) return;
+                // update game status
+                const game = liveGame;
+                game.status = 'Completed';
+                API.updateGame(game);
+                toast('Game completed!');
+                liveGame = null;
+                nav.go('games');
+            };
+
+            window.liveSaveAndExit = function() {
+                if (!confirm('Save and exit live mode?')) return;
+                liveGame = null;
+                nav.go('games');
+            };
+
+            // --- Statistics ---
+            async function renderStats() {
+                const answers = await API.getAnswersForCompetition(currentCompetitionId);
+                const students = await API.getStudents();
+                const schools = await API.getSchools();
+                const divStudents = students.filter(s => s.division === currentDivision);
+                let html = `<div class="card"><h2>📈 Statistics · ${currentDivision}</h2>`;
+                if (divStudents.length === 0) html += `<p class="text-muted">No students in this division.</p>`;
+                else {
+                    html += `<div class="table-wrap"><table><tr><th>Student</th><th>School</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th><th>Acc%</th></tr>`;
+                    divStudents.forEach(stu => {
+                        const s = API.calcStudentStats(answers, stu.id);
+                        const sch = schools.find(sc => sc.id === stu.school);
+                        html +=
+                            `<tr><td>${stu.fullName}</td><td>${sch?sch.name:'?'}</td><td>${s.Mathematics||0}</td><td>${s.Science||0}</td><td>${s.English||0}</td><td>${s.History||0}</td><td>${s['General Knowledge']||0}</td><td>${s.total}</td><td>${s.accuracy}%</td></tr>`;
+                    });
+                    html += `</table></div>`;
+                }
+                html += `</div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            // --- Awards ---
+            async function renderAwards() {
+                const answers = await API.getAnswersForCompetition(currentCompetitionId);
+                const students = await API.getStudents();
+                const html = `
+                    <div class="card"><h2>🏅 Awards · ${currentDivision}</h2>
+                    <div class="grid-2">
+                        <div class="card"><h3>Junior High</h3>${formatAwards(answers, students, 'Junior High')}</div>
+                        <div class="card"><h3>Senior High</h3>${formatAwards(answers, students, 'Senior High')}</div>
+                    </div></div>
+                `;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            function formatAwards(answers, students, division) {
+                const awards = API.getAwardWinners(answers, students, division);
+                return Object.entries(awards).map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
+            }
+
+            // --- Backup ---
+            async function renderBackup() {
+                const html = `
+                    <div class="card"><h2>💾 Backup & Restore</h2>
+                    <div class="flex"><button class="btn" onclick="exportBackup()">📤 Export Database</button>
+                    <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 Import</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"></div>
+                    <p class="text-muted mt-12">Exports all competitions, schools, students, games, and answers.</p>
+                    </div>
+                `;
+                document.getElementById('pageContent').innerHTML = html;
+            }
+
+            window.exportBackup = async function() {
+                const data = {
+                    schemaVersion: 1,
+                    exported: new Date().toISOString(),
+                    competitions: await API.getCompetitions(),
+                    schools: await API.getSchools(),
+                    students: await API.getStudents(),
+                    games: await API.getGames(),
+                    answerRecords: await API.getAnswers(),
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `MMLI_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast('Backup exported');
+            };
+
+            window.importBackup = async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    if (!data.schemaVersion) { toast('Invalid backup file'); return; }
+                    if (!confirm('Import will replace all current data. Continue?')) return;
+                    // Clear existing data
+                    const stores = ['competitions', 'schools', 'students', 'games', 'answerRecords'];
+                    for (let s of stores) {
+                        const all = await storeGetAll(s);
+                        for (let item of all) await storeDelete(s, item.id);
+                    }
+                    // Import
+                    for (let c of data.competitions || []) await storePut('competitions', c);
+                    for (let s of data.schools || []) await storePut('schools', s);
+                    for (let s of data.students || []) await storePut('students', s);
+                    for (let g of data.games || []) await storePut('games', g);
+                    for (let a of data.answerRecords || []) await storePut('answerRecords', a);
+                    toast('Import successful!');
+                    await API.loadSettings();
+                    nav.go('dashboard');
+                } catch (e) {
+                    toast('Import error: ' + e.message);
+                }
+                event.target.value = '';
+            };
+
+            // --- Init ---
+            window.API = API;
+            window.nav = nav;
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await API.init();
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        nav.go(btn.dataset.section);
+                    });
+                });
+                nav.go('dashboard');
+                toast('MMLI System ready');
+            });
+
+            // Expose for inline onclick
+            window.setDivision = setDivision;
+            window.startLiveGame = startLiveGame;
+        })();
+    </script>
 </body>
 </html>
