@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>MMLI Competition System</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1NTElDb21wU3RhdHMiLAogICJzaG9ydF9uYW1lIjogIk1NTElTdGF0cyIsCiAgImRlc2NyaXB0aW9uIjogIk9mZmxpbmUgUXVpeiBTdGF0aXN0aWNzIGZvciBNaW5kIE1hc3RlcnMgTGliZXJpYSIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGUyYzU3IiwKICAidGhlbWVfY29sb3IiOiAiI2Y5YzA0MCIsCiAgImljb25zIjogWwogICAgeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHJlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIGZpbGw9JyMwZTJjNTcnLz48dGV4dCB4PSc1MCcgeT0nNTUnIGZvbnQtc2l6ZT0nMjAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmOWM0MDAnIGZvbnQtZmFtaWx5PSdTYW5zLXNlcmlmJz5NTUxJPC90ZXh0Pjwvc3ZnPiIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCJ9CiAgXQp9">
     <style>
         * {
             box-sizing: border-box;
@@ -75,6 +74,9 @@
             padding: 8px 12px;
             border-radius: 60px;
             box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         .nav-btn {
             background: transparent;
@@ -119,11 +121,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 18px;
-        }
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
         }
         .stat-number {
             font-size: 2.6rem;
@@ -346,6 +343,15 @@
             font-weight: 600;
             font-size: 0.7rem;
         }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+        }
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
         @media (max-width: 640px) {
             .logo-text {
                 font-size: 1.2rem;
@@ -354,19 +360,12 @@
                 gap: 4px;
             }
             .nav-btn {
-                padding: 6px 12px;
-                font-size: 0.75rem;
+                padding: 6px 10px;
+                font-size: 0.7rem;
             }
             .student-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
-        }
-        .clickable {
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .clickable:hover {
-            opacity: 0.8;
         }
     </style>
 </head>
@@ -374,7 +373,11 @@
     <div class="app" id="app">
         <div class="header">
             <div class="logo">
-                <svg viewBox="0 0 100 100" width="48" height="48"><rect width="100" height="100" fill="#0e2c57" rx="20"/><text x="50" y="65" text-anchor="middle" fill="#f9c040" font-size="38" font-weight="800" font-family="Segoe UI, sans-serif">MM</text><text x="50" y="90" text-anchor="middle" fill="#f9c040" font-size="18" font-weight="600">LI</text></svg>
+                <svg viewBox="0 0 100 100" width="48" height="48">
+                    <rect width="100" height="100" fill="#0e2c57" rx="20"/>
+                    <text x="50" y="65" text-anchor="middle" fill="#f9c040" font-size="38" font-weight="800" font-family="Segoe UI, sans-serif">MM</text>
+                    <text x="50" y="90" text-anchor="middle" fill="#f9c040" font-size="18" font-weight="600">LI</text>
+                </svg>
                 <div class="logo-text">MIND <span>MASTERS</span> · LI</div>
             </div>
             <div class="subhead">OFFLINE v1</div>
@@ -393,26 +396,30 @@
         <div id="pageContent"></div>
         <div id="toast" class="toast">Ready</div>
     </div>
+
     <script>
         // ============================================================
-        // MMLI COMPETITION SYSTEM - Full Production Implementation
+        // MMLI COMPETITION SYSTEM - FULLY WORKING
         // ============================================================
         (function() {
+            'use strict';
+
+            // --- Constants ---
             const DB_NAME = 'MMLI_DB';
-            const DB_VER = 2;
+            const DB_VER = 3;
+            const CATEGORIES = ['Mathematics', 'Science', 'English', 'History', 'General Knowledge'];
+            const DIVISIONS = ['Junior High', 'Senior High'];
+
+            // --- State ---
             let db = null;
             let currentCompetitionId = null;
             let currentDivision = 'Junior High';
+            let liveState = null;
 
-            // --- Live game state ---
-            let liveGame = null; // current game object
-            let liveHalf = 1; // 1 or 2
-            let liveQuestionNumber = 0;
-            let liveCategory = 'Mathematics';
-            let liveSelectedStudent = null; // student id
-            let liveAnswers = []; // answer records for this game (temp, saved on end)
-
-            function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+            // --- Utilities ---
+            function uid() {
+                return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+            }
 
             function toast(msg, dur = 2500) {
                 const t = document.getElementById('toast');
@@ -420,6 +427,19 @@
                 t.classList.add('show');
                 clearTimeout(t._hide);
                 t._hide = setTimeout(() => t.classList.remove('show'), dur);
+            }
+
+            function showModal(html) {
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = html;
+                document.body.appendChild(overlay);
+                return overlay;
+            }
+
+            function closeModal() {
+                const modal = document.querySelector('.modal-overlay');
+                if (modal) modal.remove();
             }
 
             // --- IndexedDB ---
@@ -434,8 +454,7 @@
                         if (!d.objectStoreNames.contains('games')) d.createObjectStore('games', { keyPath: 'id' });
                         if (!d.objectStoreNames.contains('answerRecords')) d.createObjectStore('answerRecords', { keyPath: 'id' });
                         if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
-                        // indexes
-                        if (!d.objectStoreNames.contains('answerRecords')) return;
+
                         const store = d.objectStore('answerRecords');
                         if (!store.indexNames.contains('gameId')) store.createIndex('gameId', 'gameId', { unique: false });
                         if (!store.indexNames.contains('studentId')) store.createIndex('studentId', 'studentId', { unique: false });
@@ -495,6 +514,7 @@
                     await openDB();
                     await this.loadSettings();
                 },
+
                 async loadSettings() {
                     const s = await storeGetAll('settings');
                     const comp = s.find(x => x.key === 'currentCompetitionId');
@@ -502,79 +522,86 @@
                     const div = s.find(x => x.key === 'currentDivision');
                     if (div) currentDivision = div.value;
                 },
+
                 async setCurrentCompetition(id) {
                     currentCompetitionId = id;
                     await storePut('settings', { key: 'currentCompetitionId', value: id });
                 },
+
                 async setCurrentDivision(div) {
                     currentDivision = div;
                     await storePut('settings', { key: 'currentDivision', value: div });
                 },
+
                 async getCompetitions() { return await storeGetAll('competitions'); },
-                async getSchools() { return await storeGetAll('schools'); },
-                async getStudents() { return await storeGetAll('students'); },
-                async getGames() { return await storeGetAll('games'); },
-                async getAnswers() { return await storeGetAll('answerRecords'); },
-                async getAnswersForGame(gameId) {
-                    return await storeGetByIndex('answerRecords', 'gameId', gameId);
-                },
                 async createCompetition(data) {
                     if (!data.id) data.id = 'comp_' + uid();
                     data.created = new Date().toISOString();
+                    data.status = data.status || 'Draft';
                     await storePut('competitions', data);
                     return data;
                 },
-                async updateCompetition(data) {
-                    await storePut('competitions', data);
-                    return data;
-                },
+                async updateCompetition(data) { await storePut('competitions', data); return data; },
+                async deleteCompetition(id) { await storeDelete('competitions', id); },
+
+                async getSchools() { return await storeGetAll('schools'); },
                 async createSchool(data) {
                     if (!data.id) data.id = 'sch_' + uid();
                     await storePut('schools', data);
                     return data;
                 },
-                async updateSchool(data) {
-                    await storePut('schools', data);
-                    return data;
-                },
+                async updateSchool(data) { await storePut('schools', data); return data; },
+                async deleteSchool(id) { await storeDelete('schools', id); },
+
+                async getStudents() { return await storeGetAll('students'); },
                 async createStudent(data) {
                     if (!data.id) data.id = 'MMLI-STU-' + String(100000 + Math.floor(Math.random() * 900000));
                     await storePut('students', data);
                     return data;
                 },
-                async updateStudent(data) {
-                    await storePut('students', data);
-                    return data;
-                },
-                async createGame(data) {
-                    if (!data.id) data.id = 'game_' + uid();
-                    data.status = data.status || 'Scheduled';
-                    data.firstHalfStatus = 'Not Started';
-                    data.secondHalfStatus = 'Not Started';
-                    await storePut('games', data);
-                    return data;
-                },
-                async updateGame(data) {
-                    await storePut('games', data);
-                    return data;
-                },
-                async recordAnswer(data) {
-                    if (!data.id) data.id = 'ans_' + uid();
-                    data.timestamp = new Date().toISOString();
-                    await storePut('answerRecords', data);
-                    return data;
-                },
-                async deleteAnswer(id) {
-                    await storeDelete('answerRecords', id);
-                },
-                async getAnswersForCompetition(compId) {
-                    return await storeGetByIndex('answerRecords', 'competitionId', compId);
-                },
+                async updateStudent(data) { await storePut('students', data); return data; },
+                async deleteStudent(id) { await storeDelete('students', id); },
                 async getStudentsBySchool(schoolId) {
                     const all = await this.getStudents();
                     return all.filter(s => s.school === schoolId);
                 },
-                // stats
+
+                async getGames() { return await storeGetAll('games'); },
+                async getGamesByCompetition(compId) {
+                    const all = await this.getGames();
+                    return all.filter(g => g.competition === compId);
+                },
+                async createGame(data) {
+                    if (!data.id) data.id = 'game_' + uid();
+                    data.status = data.status || 'Scheduled';
+                    data.firstHalfStatus = data.firstHalfStatus || 'Not Started';
+                    data.secondHalfStatus = data.secondHalfStatus || 'Not Started';
+                    await storePut('games', data);
+                    return data;
+                },
+                async updateGame(data) { await storePut('games', data); return data; },
+                async deleteGame(id) {
+                    const answers = await this.getAnswersForGame(id);
+                    for (let a of answers) await storeDelete('answerRecords', a.id);
+                    await storeDelete('games', id);
+                },
+
+                async getAnswers() { return await storeGetAll('answerRecords'); },
+                async getAnswersForGame(gameId) {
+                    return await storeGetByIndex('answerRecords', 'gameId', gameId);
+                },
+                async getAnswersForCompetition(compId) {
+                    return await storeGetByIndex('answerRecords', 'competitionId', compId);
+                },
+                async recordAnswer(data) {
+                    if (!data.id) data.id = 'ans_' + uid();
+                    data.timestamp = data.timestamp || new Date().toISOString();
+                    await storePut('answerRecords', data);
+                    return data;
+                },
+                async updateAnswer(data) { await storePut('answerRecords', data); return data; },
+                async deleteAnswer(id) { await storeDelete('answerRecords', id); },
+
                 calcStudentStats(answers, studentId) {
                     const a = answers.filter(r => r.studentId === studentId);
                     let total = 0,
@@ -587,9 +614,9 @@
                         else wrong++;
                         if (cats[r.category] !== undefined) cats[r.category]++;
                     });
-                    return { total, correct, wrong, accuracy: total ? Math.round(correct / total * 100) : 0, ...cats };
+                    return { total, correct, wrong, accuracy: total ? Math.round((correct / total) * 100) : 0, ...cats };
                 },
-                // award winners per division
+
                 getAwardWinners(answers, students, division) {
                     const divStudents = students.filter(s => s.division === division);
                     const divAnswers = answers.filter(a => a.division === division);
@@ -597,9 +624,10 @@
                         const s = this.calcStudentStats(divAnswers, stu.id);
                         return { ...stu, stats: s };
                     });
-                    const categories = ['Mathematics', 'Science', 'English', 'History'];
+
                     const awards = {};
-                    categories.forEach(cat => {
+                    const catKeys = ['Mathematics', 'Science', 'English', 'History'];
+                    catKeys.forEach(cat => {
                         const sorted = [...stats].filter(s => s.stats[cat] > 0).sort((a, b) => b.stats[cat] - a.stats[cat]);
                         if (sorted.length) {
                             const top = sorted[0];
@@ -609,7 +637,7 @@
                             awards['Best ' + cat] = '—';
                         }
                     });
-                    // MVQ (total across all categories)
+
                     const sortedMVQ = [...stats].filter(s => s.stats.total > 0).sort((a, b) => b.stats.total - a.stats.total);
                     if (sortedMVQ.length) {
                         const top = sortedMVQ[0];
@@ -622,15 +650,18 @@
                 }
             };
 
-            // --- UI Navigation ---
+            // --- Navigation ---
             const nav = {
                 currentSection: 'dashboard',
+
                 go(section) {
                     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelector(`.nav-btn[data-section="${section}"]`)?.classList.add('active');
+                    const btn = document.querySelector(`.nav-btn[data-section="${section}"]`);
+                    if (btn) btn.classList.add('active');
                     this.currentSection = section;
                     this.render(section);
                 },
+
                 render(section) {
                     switch (section) {
                         case 'dashboard':
@@ -664,7 +695,8 @@
                 }
             };
 
-            // --- Render functions ---
+            // --- Render Functions ---
+
             async function renderDashboard() {
                 const comps = await API.getCompetitions();
                 const games = await API.getGames();
@@ -674,43 +706,66 @@
                 const active = comps.find(c => c.id === currentCompetitionId);
                 const compGames = games.filter(g => g.competition === currentCompetitionId);
                 const compAnswers = answers.filter(a => a.competitionId === currentCompetitionId);
-                const html = `
-                    <div class="card"><div class="flex"><span class="stat-label">Active Competition</span>
-                        <span class="stat-number" style="font-size:1.6rem">${active ? active.name : 'None selected'}</span>
-                        <button class="btn btn-sm btn-outline" onclick="nav.go('competitions')">Change</button>
-                    </div></div>
+                const divStudents = students.filter(s => s.division === currentDivision);
+
+                let html = `
+                    <div class="card">
+                        <div class="flex">
+                            <span class="stat-label">Active Competition</span>
+                            <span class="stat-number" style="font-size:1.6rem">${active ? active.name : 'None selected'}</span>
+                            <button class="btn btn-sm btn-outline" onclick="nav.go('competitions')">Change</button>
+                        </div>
+                    </div>
                     <div class="grid-2">
                         <div class="card"><div class="stat-number">${compGames.length}</div><div class="stat-label">Games</div></div>
-                        <div class="card"><div class="stat-number">${students.filter(s=>s.division===currentDivision).length}</div><div class="stat-label">Students (${currentDivision})</div></div>
+                        <div class="card"><div class="stat-number">${divStudents.length}</div><div class="stat-label">Students (${currentDivision})</div></div>
                         <div class="card"><div class="stat-number">${schools.length}</div><div class="stat-label">Schools</div></div>
                         <div class="card"><div class="stat-number">${compAnswers.length}</div><div class="stat-label">Questions Recorded</div></div>
                     </div>
-                    <div class="card"><div class="flex gap-8"><span class="stat-label">Division:</span> 
-                        <button class="btn btn-sm ${currentDivision==='Junior High'?'btn-success':'btn-outline'}" onclick="setDivision('Junior High')">Junior High</button>
-                        <button class="btn btn-sm ${currentDivision==='Senior High'?'btn-success':'btn-outline'}" onclick="setDivision('Senior High')">Senior High</button>
-                    </div></div>
+                    <div class="card">
+                        <div class="flex gap-8">
+                            <span class="stat-label">Division:</span>
+                            <button class="btn btn-sm ${currentDivision === 'Junior High' ? 'btn-success' : 'btn-outline'}" onclick="setDivision('Junior High')">Junior High</button>
+                            <button class="btn btn-sm ${currentDivision === 'Senior High' ? 'btn-success' : 'btn-outline'}" onclick="setDivision('Senior High')">Senior High</button>
+                        </div>
+                    </div>
                 `;
                 document.getElementById('pageContent').innerHTML = html;
             }
 
-            async function setDivision(div) {
+            window.setDivision = async function(div) {
                 await API.setCurrentDivision(div);
                 nav.go('dashboard');
-            }
+            };
 
-            // --- Competitions ---
+            // --- COMPETITIONS ---
             async function renderCompetitions() {
                 const comps = await API.getCompetitions();
-                let html = `<div class="card"><h2>🏆 Competitions</h2><button class="btn btn-sm" onclick="showCompForm()">+ New Competition</button><div class="mt-12">`;
-                if (comps.length === 0) html += `<p class="text-muted">No competitions yet. Create one!</p>`;
-                else {
-                    html += `<div class="table-wrap"><table><tr><th>Name</th><th>Year</th><th>Status</th><th>Action</th></tr>`;
+                let html = `
+                    <div class="card">
+                        <h2>🏆 Competitions</h2>
+                        <button class="btn btn-sm" onclick="showCompForm()">+ New Competition</button>
+                        <div class="mt-12">
+                `;
+
+                if (comps.length === 0) {
+                    html += `<div class="empty-state"><div class="icon">📋</div><p>No competitions yet. Create your first competition!</p></div>`;
+                } else {
+                    html += `<div class="table-wrap"><table>
+                        <tr><th>Name</th><th>Year</th><th>Venue</th><th>Status</th><th>Actions</th></tr>`;
                     comps.forEach(c => {
-                        const active = c.id === currentCompetitionId ? '✅ Active' : '';
-                        html += `<tr><td>${c.name}</td><td>${c.year||''}</td><td>${c.status||'Draft'} ${active}</td>
-                        <td><button class="btn btn-sm" onclick="selectComp('${c.id}')">Select</button>
-                        <button class="btn btn-sm btn-outline" onclick="showCompForm('${c.id}')">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteComp('${c.id}')">×</button></td></tr>`;
+                        const isActive = c.id === currentCompetitionId;
+                        html += `<tr>
+                            <td><strong>${c.name}</strong> ${isActive ? '✅' : ''}</td>
+                            <td>${c.year || ''}</td>
+                            <td>${c.venue || ''}</td>
+                            <td><span class="badge">${c.status || 'Draft'}</span></td>
+                            <td>
+                                <button class="btn btn-sm ${isActive ? 'btn-success' : 'btn-outline'}" onclick="selectComp('${c.id}')">${isActive ? 'Active' : 'Select'}</button>
+                                <button class="btn btn-sm btn-outline" onclick="showCompForm('${c.id}')">✏️</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteComp('${c.id}')">×</button>
+                            </td>
+                        </tr>`;
                     });
                     html += `</table></div>`;
                 }
@@ -721,34 +776,40 @@
             window.showCompForm = async function(id) {
                 const comps = await API.getCompetitions();
                 const existing = id ? comps.find(c => c.id === id) : null;
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
+                showModal(`
                     <div class="modal">
                         <h2>${existing ? 'Edit' : 'New'} Competition</h2>
-                        <input class="input-field" id="compName" placeholder="Name" value="${existing?existing.name:''}">
-                        <input class="input-field" id="compYear" placeholder="Year" value="${existing?existing.year:''}">
-                        <input class="input-field" id="compVenue" placeholder="Venue" value="${existing?existing.venue:''}">
-                        <input class="input-field" id="compOrganizer" placeholder="Organizer" value="${existing?existing.organizer:''}">
-                        <select class="input-field" id="compStatus"><option value="Draft">Draft</option><option value="Active">Active</option><option value="Completed">Completed</option><option value="Finalized">Finalized</option></select>
-                        <div class="flex"><button class="btn" onclick="saveComp('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                        <input class="input-field" id="compName" placeholder="Competition Name *" value="${existing ? existing.name : ''}">
+                        <input class="input-field" id="compYear" placeholder="Year" value="${existing ? existing.year : ''}">
+                        <input class="input-field" id="compVenue" placeholder="Venue" value="${existing ? existing.venue : ''}">
+                        <input class="input-field" id="compOrganizer" placeholder="Organizer" value="${existing ? existing.organizer : ''}">
+                        <select class="input-field" id="compStatus">
+                            <option value="Draft" ${existing && existing.status === 'Draft' ? 'selected' : ''}>Draft</option>
+                            <option value="Active" ${existing && existing.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Completed" ${existing && existing.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Finalized" ${existing && existing.status === 'Finalized' ? 'selected' : ''}>Finalized</option>
+                        </select>
+                        <div class="flex">
+                            <button class="btn" onclick="saveComp('${id || ''}')">Save</button>
+                            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                        </div>
                     </div>
-                `;
-                document.body.appendChild(modal);
-                if (existing) document.getElementById('compStatus').value = existing.status || 'Draft';
+                `);
             };
 
             window.saveComp = async function(id) {
-                const name = document.getElementById('compName').value;
-                if (!name) { toast('Name required'); return; }
+                const name = document.getElementById('compName').value.trim();
+                if (!name) { toast('Competition name is required'); return; }
+
                 const data = {
                     id: id || undefined,
-                    name,
-                    year: document.getElementById('compYear').value,
-                    venue: document.getElementById('compVenue').value,
-                    organizer: document.getElementById('compOrganizer').value,
+                    name: name,
+                    year: document.getElementById('compYear').value.trim(),
+                    venue: document.getElementById('compVenue').value.trim(),
+                    organizer: document.getElementById('compOrganizer').value.trim(),
                     status: document.getElementById('compStatus').value,
                 };
+
                 if (id) {
                     const comps = await API.getCompetitions();
                     const existing = comps.find(c => c.id === id);
@@ -757,7 +818,7 @@
                 } else {
                     await API.createCompetition(data);
                 }
-                document.querySelector('.modal-overlay')?.remove();
+                closeModal();
                 toast('Competition saved');
                 nav.go('competitions');
             };
@@ -769,24 +830,44 @@
             };
 
             window.deleteComp = async function(id) {
-                if (!confirm('Delete competition?')) return;
-                await storeDelete('competitions', id);
+                if (!confirm('Delete this competition and all its data?')) return;
+                const games = await API.getGamesByCompetition(id);
+                for (let g of games) {
+                    const answers = await API.getAnswersForGame(g.id);
+                    for (let a of answers) await API.deleteAnswer(a.id);
+                    await API.deleteGame(g.id);
+                }
+                await API.deleteCompetition(id);
                 if (currentCompetitionId === id) await API.setCurrentCompetition(null);
-                toast('Deleted');
+                toast('Competition deleted');
                 nav.go('competitions');
             };
 
-            // --- Schools ---
+            // --- SCHOOLS ---
             async function renderSchools() {
                 const schools = await API.getSchools();
-                let html = `<div class="card"><h2>🏫 Schools</h2><button class="btn btn-sm" onclick="showSchoolForm()">+ Add School</button><div class="mt-12">`;
-                if (schools.length === 0) html += `<p class="text-muted">No schools registered.</p>`;
-                else {
-                    html += `<div class="table-wrap"><table><tr><th>Name</th><th>Type</th><th>Contact</th><th>Action</th></tr>`;
+                let html = `
+                    <div class="card">
+                        <h2>🏫 Schools</h2>
+                        <button class="btn btn-sm" onclick="showSchoolForm()">+ Add School</button>
+                        <div class="mt-12">
+                `;
+
+                if (schools.length === 0) {
+                    html += `<div class="empty-state"><div class="icon">🏫</div><p>No schools registered. Add your first school!</p></div>`;
+                } else {
+                    html += `<div class="table-wrap"><table>
+                        <tr><th>Name</th><th>Type</th><th>Contact</th><th>Actions</th></tr>`;
                     schools.forEach(s => {
-                        html += `<tr><td>${s.name}</td><td>${s.schoolType||''}</td><td>${s.contact||''}</td>
-                        <td><button class="btn btn-sm btn-outline" onclick="showSchoolForm('${s.id}')">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteSchool('${s.id}')">×</button></td></tr>`;
+                        html += `<tr>
+                            <td><strong>${s.name}</strong></td>
+                            <td>${s.schoolType || 'Both'}</td>
+                            <td>${s.contact || ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" onclick="showSchoolForm('${s.id}')">✏️</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSchool('${s.id}')">×</button>
+                            </td>
+                        </tr>`;
                     });
                     html += `</table></div>`;
                 }
@@ -797,30 +878,35 @@
             window.showSchoolForm = async function(id) {
                 const schools = await API.getSchools();
                 const existing = id ? schools.find(s => s.id === id) : null;
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
+                showModal(`
                     <div class="modal">
                         <h2>${existing ? 'Edit' : 'New'} School</h2>
-                        <input class="input-field" id="schName" placeholder="School Name" value="${existing?existing.name:''}">
-                        <input class="input-field" id="schContact" placeholder="Contact" value="${existing?existing.contact:''}">
-                        <select class="input-field" id="schType"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option><option value="Both">Both</option></select>
-                        <div class="flex"><button class="btn" onclick="saveSchool('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                        <input class="input-field" id="schName" placeholder="School Name *" value="${existing ? existing.name : ''}">
+                        <input class="input-field" id="schContact" placeholder="Contact Person/Phone" value="${existing ? existing.contact : ''}">
+                        <select class="input-field" id="schType">
+                            <option value="Junior High" ${existing && existing.schoolType === 'Junior High' ? 'selected' : ''}>Junior High</option>
+                            <option value="Senior High" ${existing && existing.schoolType === 'Senior High' ? 'selected' : ''}>Senior High</option>
+                            <option value="Both" ${existing && existing.schoolType === 'Both' ? 'selected' : ''}>Both</option>
+                        </select>
+                        <div class="flex">
+                            <button class="btn" onclick="saveSchool('${id || ''}')">Save</button>
+                            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                        </div>
                     </div>
-                `;
-                document.body.appendChild(modal);
-                if (existing) document.getElementById('schType').value = existing.schoolType || 'Both';
+                `);
             };
 
             window.saveSchool = async function(id) {
-                const name = document.getElementById('schName').value;
-                if (!name) { toast('Name required'); return; }
+                const name = document.getElementById('schName').value.trim();
+                if (!name) { toast('School name is required'); return; }
+
                 const data = {
                     id: id || undefined,
-                    name,
-                    contact: document.getElementById('schContact').value,
+                    name: name,
+                    contact: document.getElementById('schContact').value.trim(),
                     schoolType: document.getElementById('schType').value,
                 };
+
                 if (id) {
                     const schools = await API.getSchools();
                     const existing = schools.find(s => s.id === id);
@@ -829,31 +915,46 @@
                 } else {
                     await API.createSchool(data);
                 }
-                document.querySelector('.modal-overlay')?.remove();
+                closeModal();
                 toast('School saved');
                 nav.go('schools');
             };
 
             window.deleteSchool = async function(id) {
-                if (!confirm('Delete school?')) return;
-                await storeDelete('schools', id);
-                toast('Deleted');
+                if (!confirm('Delete this school?')) return;
+                await API.deleteSchool(id);
+                toast('School deleted');
                 nav.go('schools');
             };
 
-            // --- Students ---
+            // --- STUDENTS ---
             async function renderStudents() {
                 const students = await API.getStudents();
                 const schools = await API.getSchools();
-                let html = `<div class="card"><h2>👨‍🎓 Students</h2><button class="btn btn-sm" onclick="showStudentForm()">+ Register Student</button><div class="mt-12">`;
-                if (students.length === 0) html += `<p class="text-muted">No students registered.</p>`;
-                else {
-                    html += `<div class="table-wrap"><table><tr><th>ID</th><th>Name</th><th>School</th><th>Division</th><th>Action</th></tr>`;
+                let html = `
+                    <div class="card">
+                        <h2>👨‍🎓 Students</h2>
+                        <button class="btn btn-sm" onclick="showStudentForm()">+ Register Student</button>
+                        <div class="mt-12">
+                `;
+
+                if (students.length === 0) {
+                    html += `<div class="empty-state"><div class="icon">👨‍🎓</div><p>No students registered. Add your first student!</p></div>`;
+                } else {
+                    html += `<div class="table-wrap"><table>
+                        <tr><th>ID</th><th>Name</th><th>School</th><th>Division</th><th>Actions</th></tr>`;
                     students.forEach(stu => {
                         const sch = schools.find(s => s.id === stu.school);
-                        html += `<tr><td>${stu.id}</td><td>${stu.fullName}</td><td>${sch?sch.name:'?'}</td><td>${stu.division}</td>
-                        <td><button class="btn btn-sm btn-outline" onclick="showStudentForm('${stu.id}')">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteStudent('${stu.id}')">×</button></td></tr>`;
+                        html += `<tr>
+                            <td><small>${stu.id}</small></td>
+                            <td><strong>${stu.fullName}</strong></td>
+                            <td>${sch ? sch.name : '?'}</td>
+                            <td>${stu.division}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" onclick="showStudentForm('${stu.id}')">✏️</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStudent('${stu.id}')">×</button>
+                            </td>
+                        </tr>`;
                     });
                     html += `</table></div>`;
                 }
@@ -865,37 +966,45 @@
                 const students = await API.getStudents();
                 const schools = await API.getSchools();
                 const existing = id ? students.find(s => s.id === id) : null;
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                let schoolOptions = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                modal.innerHTML = `
+
+                let schoolOptions = schools.map(s =>
+                    `<option value="${s.id}" ${existing && existing.school === s.id ? 'selected' : ''}>${s.name}</option>`
+                ).join('');
+
+                if (!schoolOptions) schoolOptions = '<option value="">No schools available</option>';
+
+                showModal(`
                     <div class="modal">
-                        <h2>${existing ? 'Edit' : 'New'} Student</h2>
-                        <input class="input-field" id="stuName" placeholder="Full Name" value="${existing?existing.fullName:''}">
+                        <h2>${existing ? 'Edit' : 'Register'} Student</h2>
+                        <input class="input-field" id="stuName" placeholder="Full Name *" value="${existing ? existing.fullName : ''}">
                         <select class="input-field" id="stuSchool">${schoolOptions}</select>
-                        <select class="input-field" id="stuDivision"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option></select>
-                        <input class="input-field" id="stuGrade" placeholder="Grade/Class" value="${existing?existing.grade:''}">
-                        <div class="flex"><button class="btn" onclick="saveStudent('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                        <select class="input-field" id="stuDivision">
+                            <option value="Junior High" ${existing && existing.division === 'Junior High' ? 'selected' : ''}>Junior High</option>
+                            <option value="Senior High" ${existing && existing.division === 'Senior High' ? 'selected' : ''}>Senior High</option>
+                        </select>
+                        <input class="input-field" id="stuGrade" placeholder="Grade/Class" value="${existing ? existing.grade : ''}">
+                        <div class="flex">
+                            <button class="btn" onclick="saveStudent('${id || ''}')">Save</button>
+                            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                        </div>
                     </div>
-                `;
-                document.body.appendChild(modal);
-                if (existing) {
-                    document.getElementById('stuSchool').value = existing.school || '';
-                    document.getElementById('stuDivision').value = existing.division || 'Junior High';
-                    document.getElementById('stuGrade').value = existing.grade || '';
-                }
+                `);
             };
 
             window.saveStudent = async function(id) {
-                const name = document.getElementById('stuName').value;
-                if (!name) { toast('Name required'); return; }
+                const name = document.getElementById('stuName').value.trim();
+                if (!name) { toast('Student name is required'); return; }
+
                 const data = {
                     id: id || undefined,
                     fullName: name,
                     school: document.getElementById('stuSchool').value,
                     division: document.getElementById('stuDivision').value,
-                    grade: document.getElementById('stuGrade').value,
+                    grade: document.getElementById('stuGrade').value.trim(),
                 };
+
+                if (!data.school) { toast('Please select a school'); return; }
+
                 if (id) {
                     const students = await API.getStudents();
                     const existing = students.find(s => s.id === id);
@@ -904,36 +1013,54 @@
                 } else {
                     await API.createStudent(data);
                 }
-                document.querySelector('.modal-overlay')?.remove();
+                closeModal();
                 toast('Student saved');
                 nav.go('students');
             };
 
             window.deleteStudent = async function(id) {
-                if (!confirm('Delete student?')) return;
-                await storeDelete('students', id);
-                toast('Deleted');
+                if (!confirm('Delete this student?')) return;
+                await API.deleteStudent(id);
+                toast('Student deleted');
                 nav.go('students');
             };
 
-            // --- Games ---
+            // --- GAMES ---
             async function renderGames() {
-                const games = await API.getGames();
-                const comps = await API.getCompetitions();
+                const games = await API.getGamesByCompetition(currentCompetitionId);
                 const schools = await API.getSchools();
-                let html = `<div class="card"><h2>🎮 Games</h2><button class="btn btn-sm" onclick="showGameForm()">+ New Game</button><div class="mt-12">`;
-                const filtered = games.filter(g => g.competition === currentCompetitionId);
-                if (filtered.length === 0) html += `<p class="text-muted">No games in this competition.</p>`;
-                else {
-                    html += `<div class="table-wrap"><table><tr><th>#</th><th>Division</th><th>School A</th><th>School B</th><th>Status</th><th>Action</th></tr>`;
-                    filtered.forEach(g => {
+                let html = `
+                    <div class="card">
+                        <h2>🎮 Games</h2>
+                        <button class="btn btn-sm" onclick="showGameForm()">+ New Game</button>
+                        <div class="mt-12">
+                `;
+
+                if (!currentCompetitionId) {
+                    html += `<div class="empty-state"><div class="icon">⚠️</div><p>Please select a competition first.</p></div>`;
+                } else if (games.length === 0) {
+                    html += `<div class="empty-state"><div class="icon">🎮</div><p>No games in this competition. Create your first game!</p></div>`;
+                } else {
+                    html += `<div class="table-wrap"><table>
+                        <tr><th>#</th><th>Division</th><th>School A</th><th>School B</th><th>Status</th><th>Actions</th></tr>`;
+                    for (let g of games) {
                         const schA = schools.find(s => s.id === g.schoolA);
                         const schB = schools.find(s => s.id === g.schoolB);
-                        html += `<tr><td>${g.gameNumber||'?'}</td><td>${g.division}</td><td>${schA?schA.name:'?'}</td><td>${schB?schB.name:'?'}</td><td>${g.status}</td>
-                        <td><button class="btn btn-sm btn-outline" onclick="showGameForm('${g.id}')">Edit</button>
-                        <button class="btn btn-sm" onclick="startLiveGame('${g.id}')">▶ Live</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteGame('${g.id}')">×</button></td></tr>`;
-                    });
+                        const answers = await API.getAnswersForGame(g.id);
+                        const qCount = answers.length;
+                        html += `<tr>
+                            <td><strong>${g.gameNumber || '?'}</strong></td>
+                            <td>${g.division}</td>
+                            <td>${schA ? schA.name : '?'}</td>
+                            <td>${schB ? schB.name : '?'}</td>
+                            <td>${g.status} (${qCount} Q)</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" onclick="showGameForm('${g.id}')">✏️</button>
+                                ${g.status !== 'Completed' ? `<button class="btn btn-sm btn-success" onclick="startLiveGame('${g.id}')">▶ Live</button>` : ''}
+                                <button class="btn btn-sm btn-danger" onclick="deleteGame('${g.id}')">×</button>
+                            </td>
+                        </tr>`;
+                    }
                     html += `</table></div>`;
                 }
                 html += `</div></div>`;
@@ -942,46 +1069,60 @@
 
             window.showGameForm = async function(id) {
                 const games = await API.getGames();
-                const comps = await API.getCompetitions();
                 const schools = await API.getSchools();
                 const existing = id ? games.find(g => g.id === id) : null;
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                let schoolOpts = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                modal.innerHTML = `
+
+                let schoolOptions = schools.map(s =>
+                    `<option value="${s.id}" ${existing && (existing.schoolA === s.id || existing.schoolB === s.id) ? 'selected' : ''}>${s.name}</option>`
+                ).join('');
+
+                if (!schoolOptions) schoolOptions = '<option value="">No schools available</option>';
+
+                showModal(`
                     <div class="modal">
                         <h2>${existing ? 'Edit' : 'New'} Game</h2>
-                        <input class="input-field" id="gameNum" placeholder="Game Number" value="${existing?existing.gameNumber:''}">
-                        <select class="input-field" id="gameDivision"><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option></select>
-                        <select class="input-field" id="gameSchoolA">${schoolOpts}</select>
-                        <select class="input-field" id="gameSchoolB">${schoolOpts}</select>
-                        <div class="flex"><button class="btn" onclick="saveGame('${id||''}')">Save</button><button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button></div>
+                        <input class="input-field" id="gameNum" type="number" placeholder="Game Number *" value="${existing ? existing.gameNumber : ''}">
+                        <select class="input-field" id="gameDivision">
+                            <option value="Junior High" ${existing && existing.division === 'Junior High' ? 'selected' : ''}>Junior High</option>
+                            <option value="Senior High" ${existing && existing.division === 'Senior High' ? 'selected' : ''}>Senior High</option>
+                        </select>
+                        <label style="font-size:0.9rem;opacity:0.8">School A</label>
+                        <select class="input-field" id="gameSchoolA">${schoolOptions}</select>
+                        <label style="font-size:0.9rem;opacity:0.8">School B</label>
+                        <select class="input-field" id="gameSchoolB">${schoolOptions}</select>
+                        <div class="flex">
+                            <button class="btn" onclick="saveGame('${id || ''}')">Save</button>
+                            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                        </div>
                     </div>
-                `;
-                document.body.appendChild(modal);
+                `);
+
                 if (existing) {
-                    document.getElementById('gameNum').value = existing.gameNumber || '';
-                    document.getElementById('gameDivision').value = existing.division || 'Junior High';
                     document.getElementById('gameSchoolA').value = existing.schoolA || '';
                     document.getElementById('gameSchoolB').value = existing.schoolB || '';
                 }
             };
 
             window.saveGame = async function(id) {
-                const gameNum = document.getElementById('gameNum').value;
-                if (!gameNum) { toast('Game number required'); return; }
+                const gameNum = parseInt(document.getElementById('gameNum').value);
+                if (!gameNum || isNaN(gameNum)) { toast('Game number is required'); return; }
+
                 const schoolA = document.getElementById('gameSchoolA').value;
                 const schoolB = document.getElementById('gameSchoolB').value;
+
+                if (!schoolA || !schoolB) { toast('Please select both schools'); return; }
                 if (schoolA === schoolB) { toast('Schools must be different'); return; }
+
                 const data = {
                     id: id || undefined,
                     competition: currentCompetitionId,
                     division: document.getElementById('gameDivision').value,
-                    gameNumber: parseInt(gameNum),
-                    schoolA,
-                    schoolB,
+                    gameNumber: gameNum,
+                    schoolA: schoolA,
+                    schoolB: schoolB,
                     status: 'Scheduled',
                 };
+
                 if (id) {
                     const games = await API.getGames();
                     const existing = games.find(g => g.id === id);
@@ -990,95 +1131,97 @@
                 } else {
                     await API.createGame(data);
                 }
-                document.querySelector('.modal-overlay')?.remove();
+                closeModal();
                 toast('Game saved');
                 nav.go('games');
             };
 
             window.deleteGame = async function(id) {
-                if (!confirm('Delete game? All answers will be lost.')) return;
-                const answers = await API.getAnswersForGame(id);
-                for (let a of answers) await API.deleteAnswer(a.id);
-                await storeDelete('games', id);
-                toast('Deleted');
+                if (!confirm('Delete this game and all its answers?')) return;
+                await API.deleteGame(id);
+                toast('Game deleted');
                 nav.go('games');
             };
 
-            // --- Live Game ---
+            // --- LIVE GAME ---
             window.startLiveGame = async function(gameId) {
                 const games = await API.getGames();
                 const game = games.find(g => g.id === gameId);
                 if (!game) { toast('Game not found'); return; }
-                liveGame = game;
-                liveHalf = 1;
-                liveQuestionNumber = 0;
-                liveCategory = 'Mathematics';
-                liveSelectedStudent = null;
-                liveAnswers = [];
-                // Load existing answers for this game
-                const existingAnswers = await API.getAnswersForGame(gameId);
-                if (existingAnswers.length > 0) {
-                    liveAnswers = existingAnswers;
-                    // determine half and question number from last record
-                    const sorted = [...existingAnswers].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-                    const last = sorted[sorted.length - 1];
-                    liveHalf = last.half || 1;
-                    liveQuestionNumber = sorted.length;
-                    // set category from last
-                    liveCategory = last.category || 'Mathematics';
-                }
+
+                const answers = await API.getAnswersForGame(gameId);
+                const sorted = [...answers].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+                liveState = {
+                    gameId: gameId,
+                    half: 1,
+                    questionNumber: sorted.length,
+                    category: sorted.length > 0 ? sorted[sorted.length - 1].category : 'Mathematics',
+                    selectedStudent: null,
+                    answers: sorted,
+                    game: game
+                };
+
                 nav.go('live');
-                renderLive();
             };
 
             async function renderLive() {
-                if (!liveGame) {
-                    document.getElementById('pageContent').innerHTML =
-                        `<div class="card"><h2>⚡ Live Game</h2><p class="text-muted">Select a game from the Games section and click "Live".</p></div>`;
+                if (!liveState) {
+                    document.getElementById('pageContent').innerHTML = `
+                        <div class="card">
+                            <h2>⚡ Live Game</h2>
+                            <div class="empty-state">
+                                <div class="icon">🎯</div>
+                                <p>Select a game from the Games section and click "Live".</p>
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
+
                 const schools = await API.getSchools();
                 const students = await API.getStudents();
-                const schA = schools.find(s => s.id === liveGame.schoolA);
-                const schB = schools.find(s => s.id === liveGame.schoolB);
-                const stuA = students.filter(s => s.school === liveGame.schoolA && s.division === liveGame.division);
-                const stuB = students.filter(s => s.school === liveGame.schoolB && s.division === liveGame.division);
+                const game = liveState.game;
+                const schA = schools.find(s => s.id === game.schoolA);
+                const schB = schools.find(s => s.id === game.schoolB);
+                const stuA = students.filter(s => s.school === game.schoolA && s.division === game.division);
+                const stuB = students.filter(s => s.school === game.schoolB && s.division === game.division);
                 const allStu = [...stuA, ...stuB];
 
-                // Build student buttons
                 let studentButtons = '';
                 allStu.forEach(stu => {
-                    const answered = liveAnswers.find(a => a.studentId === stu.id && a.half === liveHalf && a
-                    .questionNumber === liveQuestionNumber);
+                    const answered = liveState.answers.find(a =>
+                        a.studentId === stu.id &&
+                        a.half === liveState.half &&
+                        a.questionNumber === liveState.questionNumber
+                    );
                     let cls = 'student-btn';
                     if (answered) cls += answered.result === 'Correct' ? ' correct' : ' wrong';
-                    if (liveSelectedStudent === stu.id) cls += ' selected';
+                    if (liveState.selectedStudent === stu.id) cls += ' selected';
                     studentButtons +=
                         `<div class="${cls}" onclick="liveSelectStudent('${stu.id}')">${stu.fullName}</div>`;
                 });
 
-                // Category buttons
-                const cats = ['Mathematics', 'Science', 'English', 'History', 'General Knowledge'];
-                let catButtons = cats.map(c =>
-                    `<button class="cat-btn ${c===liveCategory?'active':''}" onclick="liveSetCategory('${c}')">${c}</button>`
+                let catButtons = CATEGORIES.map(c =>
+                    `<button class="cat-btn ${c === liveState.category ? 'active' : ''}" onclick="liveSetCategory('${c}')">${c}</button>`
                 ).join('');
 
-                // Stats summary for this game
-                let statsHtml = `<div class="table-wrap"><table><tr><th>Student</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th></tr>`;
+                let statsHtml = `<div class="table-wrap"><table>
+                    <tr><th>Student</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th><th>Acc%</th></tr>`;
                 allStu.forEach(stu => {
-                    const s = API.calcStudentStats(liveAnswers, stu.id);
+                    const s = API.calcStudentStats(liveState.answers, stu.id);
                     statsHtml +=
-                        `<tr><td>${stu.fullName}</td><td>${s.Mathematics||0}</td><td>${s.Science||0}</td><td>${s.English||0}</td><td>${s.History||0}</td><td>${s['General Knowledge']||0}</td><td>${s.total}</td></tr>`;
+                        `<tr><td>${stu.fullName}</td><td>${s.Mathematics||0}</td><td>${s.Science||0}</td><td>${s.English||0}</td><td>${s.History||0}</td><td>${s['General Knowledge']||0}</td><td>${s.total}</td><td>${s.accuracy}%</td></tr>`;
                 });
                 statsHtml += `</table></div>`;
 
                 const html = `
                     <div class="card">
                         <div class="live-header">
-                            <span>⚡ ${liveGame.gameNumber} · ${liveGame.division}</span>
-                            <span>${schA?schA.name:'?'} vs ${schB?schB.name:'?'}</span>
-                            <span class="question-badge">Q${liveQuestionNumber+1} · ${liveCategory}</span>
-                            <span>Half ${liveHalf}</span>
+                            <span>⚡ Game ${game.gameNumber} · ${game.division}</span>
+                            <span>${schA ? schA.name : '?'} vs ${schB ? schB.name : '?'}</span>
+                            <span class="question-badge">Q${liveState.questionNumber + 1} · ${liveState.category}</span>
+                            <span>Half ${liveState.half}</span>
                         </div>
                         <div class="category-row">${catButtons}</div>
                         <div><strong>Select student who answered:</strong></div>
@@ -1098,105 +1241,131 @@
             }
 
             window.liveSetCategory = function(cat) {
-                liveCategory = cat;
+                liveState.category = cat;
                 renderLive();
             };
 
             window.liveSelectStudent = function(studentId) {
-                liveSelectedStudent = studentId;
+                liveState.selectedStudent = studentId;
                 renderLive();
             };
 
             window.liveRecord = async function(result) {
-                if (!liveSelectedStudent) { toast('Select a student first'); return; }
-                // Check if already answered this question
-                const existing = liveAnswers.find(a =>
-                    a.half === liveHalf &&
-                    a.questionNumber === liveQuestionNumber &&
-                    a.category === liveCategory
+                if (!liveState.selectedStudent) { toast('Select a student first'); return; }
+
+                const students = await API.getStudents();
+                const stu = students.find(s => s.id === liveState.selectedStudent);
+                if (!stu) { toast('Student not found'); return; }
+
+                const existing = liveState.answers.find(a =>
+                    a.half === liveState.half &&
+                    a.questionNumber === liveState.questionNumber &&
+                    a.category === liveState.category
                 );
+
+                const data = {
+                    competitionId: liveState.game.competition,
+                    division: liveState.game.division,
+                    gameId: liveState.gameId,
+                    half: liveState.half,
+                    questionNumber: liveState.questionNumber,
+                    category: liveState.category,
+                    studentId: liveState.selectedStudent,
+                    schoolId: stu.school,
+                    result: result,
+                };
+
                 if (existing) {
-                    // Update
-                    existing.studentId = liveSelectedStudent;
+                    existing.studentId = liveState.selectedStudent;
+                    existing.schoolId = stu.school;
                     existing.result = result;
                     existing.timestamp = new Date().toISOString();
-                    await API.recordAnswer(existing);
-                    toast('Updated answer');
+                    await API.updateAnswer(existing);
+                    toast('Answer updated');
                 } else {
-                    const record = {
-                        competitionId: liveGame.competition,
-                        division: liveGame.division,
-                        gameId: liveGame.id,
-                        half: liveHalf,
-                        questionNumber: liveQuestionNumber,
-                        category: liveCategory,
-                        studentId: liveSelectedStudent,
-                        schoolId: liveSelectedStudent.startsWith('MMLI') ? liveGame.schoolA : liveGame.schoolA, // simplified
-                        result: result,
-                    };
-                    // get school from student
-                    const students = await API.getStudents();
-                    const stu = students.find(s => s.id === liveSelectedStudent);
-                    if (stu) record.schoolId = stu.school;
-                    await API.recordAnswer(record);
-                    liveAnswers.push(record);
-                    toast('Recorded');
+                    const newAnswer = await API.recordAnswer(data);
+                    liveState.answers.push(newAnswer);
+                    toast('Answer recorded');
                 }
-                liveSelectedStudent = null;
-                liveQuestionNumber++;
+
+                liveState.selectedStudent = null;
+                liveState.questionNumber++;
                 renderLive();
             };
 
             window.liveNextQuestion = function() {
-                liveSelectedStudent = null;
-                liveQuestionNumber++;
+                liveState.selectedStudent = null;
+                liveState.questionNumber++;
                 renderLive();
             };
 
             window.liveEndHalf = function() {
-                if (!confirm('End Half ' + liveHalf + '?')) return;
-                if (liveHalf === 1) {
-                    liveHalf = 2;
-                    liveQuestionNumber = 0;
+                if (!confirm(`End Half ${liveState.half}?`)) return;
+                if (liveState.half === 1) {
+                    liveState.half = 2;
+                    liveState.questionNumber = 0;
+                    liveState.selectedStudent = null;
+                    toast('Started Second Half');
                 } else {
-                    toast('Game already in second half');
+                    toast('Already in Second Half');
                 }
-                liveSelectedStudent = null;
                 renderLive();
             };
 
-            window.liveEndGame = function() {
+            window.liveEndGame = async function() {
                 if (!confirm('End game and save all answers?')) return;
-                // update game status
-                const game = liveGame;
+                const game = liveState.game;
                 game.status = 'Completed';
-                API.updateGame(game);
+                await API.updateGame(game);
                 toast('Game completed!');
-                liveGame = null;
+                liveState = null;
                 nav.go('games');
             };
 
-            window.liveSaveAndExit = function() {
+            window.liveSaveAndExit = async function() {
                 if (!confirm('Save and exit live mode?')) return;
-                liveGame = null;
+                liveState = null;
                 nav.go('games');
             };
 
-            // --- Statistics ---
+            // --- STATS ---
             async function renderStats() {
                 const answers = await API.getAnswersForCompetition(currentCompetitionId);
                 const students = await API.getStudents();
                 const schools = await API.getSchools();
                 const divStudents = students.filter(s => s.division === currentDivision);
-                let html = `<div class="card"><h2>📈 Statistics · ${currentDivision}</h2>`;
-                if (divStudents.length === 0) html += `<p class="text-muted">No students in this division.</p>`;
-                else {
-                    html += `<div class="table-wrap"><table><tr><th>Student</th><th>School</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th><th>Acc%</th></tr>`;
-                    divStudents.forEach(stu => {
+
+                let html = `
+                    <div class="card">
+                        <h2>📈 Statistics · ${currentDivision}</h2>
+                `;
+
+                if (divStudents.length === 0) {
+                    html += `<div class="empty-state"><div class="icon">📊</div><p>No students in this division.</p></div>`;
+                } else {
+                    html += `<div class="table-wrap"><table>
+                        <tr><th>Rank</th><th>Student</th><th>School</th><th>Math</th><th>Sci</th><th>Eng</th><th>Hist</th><th>GK</th><th>Total</th><th>Acc%</th></tr>`;
+
+                    const stats = divStudents.map(stu => {
                         const s = API.calcStudentStats(answers, stu.id);
                         const sch = schools.find(sc => sc.id === stu.school);
-                        html +=
-                            `<tr><td>${stu.fullName}</td><td>${sch?sch.name:'?'}</td><td>${s.Mathematics||0}</td><td>${s.Science||0}</td><td>${s.English||0}</td><td>${s.History||0}</td><td>${s['General Knowledge']||0}</td><td>${s.total}</td><td>${s.accuracy}%</td></tr>`;
+                        return { ...stu, stats: s, schoolName: sch ? sch.name : '?' };
+                    });
+
+                    const sorted = [...stats].sort((a, b) => b.stats.total - a.stats.total);
+                    sorted.forEach((stu, idx) => {
+                        html += `<tr>
+                            <td>${idx + 1}</td>
+                            <td><strong>${stu.fullName}</strong></td>
+                            <td>${stu.schoolName}</td>
+                            <td>${stu.stats.Mathematics||0}</td>
+                            <td>${stu.stats.Science||0}</td>
+                            <td>${stu.stats.English||0}</td>
+                            <td>${stu.stats.History||0}</td>
+                            <td>${stu.stats['General Knowledge']||0}</td>
+                            <td><strong>${stu.stats.total}</strong></td>
+                            <td>${stu.stats.accuracy}%</td>
+                        </tr>`;
                     });
                     html += `</table></div>`;
                 }
@@ -1204,36 +1373,50 @@
                 document.getElementById('pageContent').innerHTML = html;
             }
 
-            // --- Awards ---
+            // --- AWARDS ---
             async function renderAwards() {
                 const answers = await API.getAnswersForCompetition(currentCompetitionId);
                 const students = await API.getStudents();
-                const html = `
-                    <div class="card"><h2>🏅 Awards · ${currentDivision}</h2>
-                    <div class="grid-2">
-                        <div class="card"><h3>Junior High</h3>${formatAwards(answers, students, 'Junior High')}</div>
-                        <div class="card"><h3>Senior High</h3>${formatAwards(answers, students, 'Senior High')}</div>
-                    </div></div>
+
+                let html = `
+                    <div class="card">
+                        <h2>🏅 Awards · ${currentDivision}</h2>
+                        <div class="grid-2">
                 `;
+
+                DIVISIONS.forEach(div => {
+                    const awards = API.getAwardWinners(answers, students, div);
+                    html += `<div class="card">
+                        <h3>${div}</h3>
+                        ${Object.entries(awards).map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('')}
+                    </div>`;
+                });
+
+                html += `</div></div>`;
                 document.getElementById('pageContent').innerHTML = html;
             }
 
-            function formatAwards(answers, students, division) {
-                const awards = API.getAwardWinners(answers, students, division);
-                return Object.entries(awards).map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
-            }
-
-            // --- Backup ---
+            // --- BACKUP ---
             async function renderBackup() {
                 const html = `
-                    <div class="card"><h2>💾 Backup & Restore</h2>
-                    <div class="flex"><button class="btn" onclick="exportBackup()">📤 Export Database</button>
-                    <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 Import</button>
-                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"></div>
-                    <p class="text-muted mt-12">Exports all competitions, schools, students, games, and answers.</p>
+                    <div class="card">
+                        <h2>💾 Backup & Restore</h2>
+                        <div class="flex">
+                            <button class="btn" onclick="exportBackup()">📤 Export Database</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 Import</button>
+                            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+                        </div>
+                        <p class="text-muted mt-12">Exports all competitions, schools, students, games, and answer records.</p>
+                        <p class="text-muted">Last backup: <span id="lastBackup">Never</span></p>
                     </div>
                 `;
                 document.getElementById('pageContent').innerHTML = html;
+
+                const settings = await storeGetAll('settings');
+                const backupTime = settings.find(s => s.key === 'lastBackup');
+                if (backupTime) {
+                    document.getElementById('lastBackup').textContent = new Date(backupTime.value).toLocaleString();
+                }
             }
 
             window.exportBackup = async function() {
@@ -1246,38 +1429,45 @@
                     games: await API.getGames(),
                     answerRecords: await API.getAnswers(),
                 };
+
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `MMLI_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.download = `MMLI_Backup_${new Date().toISOString().slice(0, 10)}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
+
+                await storePut('settings', { key: 'lastBackup', value: new Date().toISOString() });
                 toast('Backup exported');
+                renderBackup();
             };
 
             window.importBackup = async function(event) {
                 const file = event.target.files[0];
                 if (!file) return;
+
                 try {
                     const text = await file.text();
                     const data = JSON.parse(text);
+
                     if (!data.schemaVersion) { toast('Invalid backup file'); return; }
-                    if (!confirm('Import will replace all current data. Continue?')) return;
-                    // Clear existing data
+                    if (!confirm('Import will REPLACE all current data. Continue?')) return;
+
                     const stores = ['competitions', 'schools', 'students', 'games', 'answerRecords'];
                     for (let s of stores) {
                         const all = await storeGetAll(s);
                         for (let item of all) await storeDelete(s, item.id);
                     }
-                    // Import
+
                     for (let c of data.competitions || []) await storePut('competitions', c);
                     for (let s of data.schools || []) await storePut('schools', s);
                     for (let s of data.students || []) await storePut('students', s);
                     for (let g of data.games || []) await storePut('games', g);
                     for (let a of data.answerRecords || []) await storePut('answerRecords', a);
-                    toast('Import successful!');
+
                     await API.loadSettings();
+                    toast('Import successful!');
                     nav.go('dashboard');
                 } catch (e) {
                     toast('Import error: ' + e.message);
@@ -1285,24 +1475,45 @@
                 event.target.value = '';
             };
 
-            // --- Init ---
+            // --- INITIALIZATION ---
             window.API = API;
             window.nav = nav;
 
+            // Set up navigation event listeners
             document.addEventListener('DOMContentLoaded', async () => {
-                await API.init();
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        nav.go(btn.dataset.section);
+                try {
+                    await API.init();
+
+                    // Attach navigation click handlers
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            const section = this.dataset.section;
+                            if (section) nav.go(section);
+                        });
                     });
-                });
-                nav.go('dashboard');
-                toast('MMLI System ready');
+
+                    // Start with dashboard
+                    nav.go('dashboard');
+                    toast('MMLI System ready');
+
+                    // Also handle any dynamically created buttons via delegation
+                    document.addEventListener('click', function(e) {
+                        // Handle modal close for overlay clicks
+                        if (e.target.classList.contains('modal-overlay')) {
+                            closeModal();
+                        }
+                    });
+
+                } catch (e) {
+                    toast('Error initializing: ' + e.message);
+                    console.error(e);
+                }
             });
 
-            // Expose for inline onclick
-            window.setDivision = setDivision;
-            window.startLiveGame = startLiveGame;
+            // Make functions globally accessible for inline onclick
+            window.closeModal = closeModal;
+            window.toast = toast;
+
         })();
     </script>
 </body>
